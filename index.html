@@ -408,7 +408,7 @@
     .review-report-line { padding: 5px 8px; border-radius: 6px; white-space: pre-wrap; }
     .review-report-line.is-failure { background: #fde8e7; }
     .review-report-line.is-warning { background: #fff3cb; }
-    #review-status.is-error { color: #b42318; }
+    #review-status.is-error, #review-fix-status.is-error { color: #b42318; }
     .ai-helper { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
     .ai-helper h3 { margin: 0 0 12px; font-size: 16px; }
     .ai-helper-history { max-height: 280px; overflow-y: auto; display: grid; gap: 10px; }
@@ -726,6 +726,10 @@
     <div class="modal-body">
       <p class="modal-status" id="review-notice" hidden></p>
       <div class="review-report" id="review-report"></div>
+    </div>
+    <div class="modal-footer">
+      <p class="modal-status" id="review-fix-status" role="status"></p>
+      <button class="primary-button" id="fix-review" type="button">照報告改好</button>
     </div>
   </dialog>
 
@@ -1528,16 +1532,16 @@
       const platformTitles = platforms.map((platform) => `【${platform}】`).join("、");
       const parts = [
         "（這段只要回覆文字，不要建立或修改任何檔案。）",
-        `你是【${brand.name}】的小編。請照品牌規格，用素材卡的內容，寫${platformTitles}的貼文，每個平台一篇。`,
-        "規則：\n一律用台灣的繁體中文和台灣用語。不要出現簡體字，也不要用大陸用語（例如：視頻→影片、質量→品質、優化→改善、信息→訊息、網絡→網路、用戶→客人或使用者）。\n素材卡上沒有的事不要寫；只能在某個平台說的，只寫在那個平台；先不要講的，每一篇都不能寫；還不確定的不要寫，寫完列出來問我。",
-        `回覆格式：每個平台用${platformTitles}這樣的標題分開；標題下面直接寫該平台可發布的完整貼文。需要我確認的事另用【要問我的】列出，不要放進貼文。`,
+        `你是【${brand.name}】的小編。請照品牌規格，用素材卡的內容，替品牌規格允許的平台寫貼文。`,
+        "規則：\n一律用台灣的繁體中文和台灣用語。不要出現簡體字，也不要用大陸用語（例如：視頻→影片、質量→品質、優化→改善、信息→訊息、網絡→網路、用戶→客人或使用者）。\n平台：只寫品牌規格已確認使用的平台；若規格只使用 IG，只輸出 IG，不寫 FB 或 LINE。平台專屬的內容與固定結尾只用在指定平台。\n事實：素材卡未填或未確認的商品品項、設計、材質、顏色、尺寸、穿搭方式、效果、價格和活動規則都不可自行補寫；範例只學語氣，不當成這次的事實。資訊不足時不要為了湊行數而編造，改用已確認的內容自然表達，必要時在【要問我的】詢問。\n日期與優惠：素材卡已確認且允許公開的日期、星期與時間應完整一致地寫出；日期或是否公開有疑問時先詢問，不猜測。只寫已確認的折扣，活動放在品牌骨架指定的可選位置，不渲染成催促購買；有效性、期限或其他規則未確認時不自行補寫，必要時在【要問我的】詢問。數字可用台灣自然寫法，但不得改變原意。\n語氣與格式：照品牌規格的骨架、語氣、禁用詞、emoji 和驚嘆號限制寫，分享句要自然，不硬湊素材詞。若 IG 規格要求正文 4～7 行，正文不含固定帳號結尾，非空白行各自計算；做不到時詢問需要補充的資訊，不編造。未確認的 hashtag 不加，不把缺少 hashtag 當作錯誤。\n只在指定平台使用限定資訊；先不要講的不能寫；需要確認的事項列在【要問我的】，不要放進可發布的貼文。",
+        `回覆格式：只用獲准平台的標題（${platformTitles}）分開；標題下面直接寫該平台可發布的完整貼文，未獲准的平台不要輸出標題或貼文。需要我確認的事另用【要問我的】列出。`,
         `品牌規格全文：\n${settings.brandSpec}`,
         `素材卡：\n${formatMaterialCard()}`
       ];
       if (settings.checklist.trim()) {
         parts.push(`先寫貼文初稿，再依這張清單在內部逐項檢查；有問題就修改貼文。清單若要求列出 ✅ 或 ❌，也只在內部執行，不要把檢查紀錄當成貼文。\n${settings.checklist}`);
       }
-      parts.push(`最後只回覆${platformTitles}的完整貼文，以及有需要時的【要問我的】。不要輸出檢查過程、✅／❌清單、評語或說明；每個平台標題下面必須是貼文，不是判斷結果。`);
+      parts.push("最後只回覆品牌規格允許的平台的完整貼文，以及有需要時的【要問我的】。不要輸出檢查過程、✅／❌清單、評語或說明；每個平台標題下面必須是貼文，不是判斷結果。");
       return parts.join("\n\n");
     }
 
@@ -1707,8 +1711,10 @@
           key: settings.aiKey,
           body: {
             model: settings.openRouterCustomModel || settings.openRouterModel,
-            messages, max_tokens: retryForLength ? 8000 : 4000,
-            reasoning: { effort: retryForLength ? "low" : settings.reasoning, exclude: true },
+            messages, max_tokens: 4000,
+            reasoning: retryForLength
+              ? { enabled: false, exclude: true }
+              : { effort: settings.reasoning, exclude: true },
             usage: { include: true }
           }
         };
@@ -1748,7 +1754,7 @@
           : "";
         if (!text) {
           const error = aiFailure(provider, choice?.finish_reason === "length"
-            ? "想太久，字數用完了（⚙ 設定把思考調成少想一點）"
+            ? "輸出額度用完，沒有產生文字（可在 ⚙ 設定更換模型）"
             : "沒有回覆文字");
           if (choice?.finish_reason === "length") error.code = "empty_length";
           throw error;
@@ -1800,8 +1806,15 @@
             result = await requestAiReply(provider, messages, runUsage);
           } catch (error) {
             if (provider !== "openrouter" || error.code !== "empty_length") throw error;
-            options.onProgress?.("OpenRouter 字數用完，正在降低思考量並重試（會增加一次 API 呼叫）…");
-            result = await requestAiReply(provider, messages, runUsage, true);
+            options.onProgress?.("OpenRouter 沒有產生文字，正在關閉思考後重試（會增加一次 API 呼叫）…");
+            try {
+              result = await requestAiReply(provider, messages, runUsage, true);
+            } catch (retryError) {
+              if (retryError.code === "empty_length" || /HTTP 400/.test(retryError.message)) {
+                throw aiFailure(provider, "關閉思考後仍無法產生文字（可在 ⚙ 設定更換模型）");
+              }
+              throw retryError;
+            }
           }
           let issue = options.validate?.(result.text);
           if (issue?.raw) unsplitRaw = issue.raw;
@@ -1850,7 +1863,7 @@
         const prompt = assemblePrompt();
         const result = await askAI([{ role: "user", content: prompt }], {
           validate: postReplyIssue,
-          correction: "請完成寫作，現在只輸出【IG】【LINE】【FB】標題及各平台可直接發布的完整貼文；待確認事項另列【要問我的】。不要輸出檢查清單、✅ 或 ❌。",
+          correction: "請依照原本的品牌規格與規則完成寫作，只輸出規格允許的平台標題及可直接發布的完整貼文；如果只允許 IG，就只輸出【IG】，不要輸出 FB 或 LINE。待確認事項另列【要問我的】。不要輸出檢查清單、✅ 或 ❌。",
           onProgress: (message) => { if (requestGeneration === workingGeneration) aiWriteStatus.textContent = message; }
         });
         if (requestGeneration !== workingGeneration) {
@@ -1965,6 +1978,11 @@
     const reviewDialog = document.getElementById("review-dialog");
     const reviewNotice = document.getElementById("review-notice");
     const reviewReport = document.getElementById("review-report");
+    const fixReviewButton = document.getElementById("fix-review");
+    const reviewFixStatus = document.getElementById("review-fix-status");
+    let reviewedDrafts = null;
+    let reviewedReport = "";
+    let reviewedContext = "";
     const defaultReviewChecklist = [
       "1. 日期、價格對不對？",
       "2. 有沒有多加素材卡沒有的事？",
@@ -1978,6 +1996,10 @@
     reviewButton.addEventListener("click", async () => {
       if (reviewButton.disabled) return;
       reviewStatus.classList.remove("is-error");
+      reviewedDrafts = null;
+      reviewedReport = "";
+      fixReviewButton.disabled = true;
+      reviewFixStatus.textContent = "";
       const postSnapshot = Object.fromEntries(["FB", "IG", "LINE"].map((platform) => [
         platform, typeof drafts[platform] === "string" ? drafts[platform] : ""
       ]));
@@ -1989,7 +2011,7 @@
       const generation = workingGeneration;
       const checklist = settings.checklist.trim() || defaultReviewChecklist;
       const messages = [
-        { role: "system", content: `你是【${brand.name}】的審核官，專門挑毛病，不負責誇獎。把每一篇貼文照檢查清單一條一條對。✅ 符合；❌ 不符合（寫出哪一句有問題、該怎麼改）；⚠️ 要靠人判斷的，先給意見。回覆格式：【平台名稱】換行，然後每條一行「編號 符號 一句話」，最後【總結】列出要人工確認的事。不管清單有沒有寫，都另外檢查有沒有簡體字或大陸用語。報告也用台灣繁體中文寫。` },
+        { role: "system", content: `你是【${brand.name}】的審核官，專門挑毛病，不負責誇獎。把每一篇貼文照檢查清單一條一條對。✅ 符合；❌ 不符合（寫出哪一句有問題、該怎麼改）；⚠️ 要靠人判斷的，先給意見。回覆格式：【平台名稱】換行，然後每條一行「編號 符號 一句話」，最後【總結】列出要人工確認的事。不管清單有沒有寫，都另外檢查有沒有簡體字或大陸用語。檢查平台是否已獲品牌規格允許，平台專屬結尾是否用對；確認素材卡的日期、星期、時間和優惠是否一致，且沒有杜撰商品、設計、搭配、效果或活動期限；核對正文行數時不計固定帳號結尾與空白行。建議修改不能加入沒有確認的事實。未確認的 hashtag 沒有使用即符合規則，不要判為錯誤；只有真正違規才用 ❌，符合用 ✅，語氣或優惠有效性等需要人判斷的事項用 ⚠️，不要把合格事項標成違規。報告也用台灣繁體中文寫。` },
         { role: "user", content: `品牌規格全文：\n${settings.brandSpec}\n\n素材卡全文：\n${formatMaterialCard()}\n\n檢查清單：\n${checklist}\n\n各平台貼文：\n${Object.entries(postSnapshot).map(([platform, post]) => `【${platform}】\n${post.trim() ? post : "（沒有貼文）"}`).join("\n\n")}` }
       ];
 
@@ -2004,6 +2026,10 @@
           return;
         }
         reviewReport.replaceChildren();
+        reviewedDrafts = postSnapshot;
+        reviewedReport = result.text;
+        reviewedContext = JSON.stringify([settings.brandSpec, checklist, formatMaterialCard()]);
+        fixReviewButton.disabled = !result.text.includes("❌");
         result.text.split(/\r?\n/).forEach((line) => {
           const row = document.createElement("div");
           row.className = "review-report-line";
@@ -2028,6 +2054,76 @@
           reviewStatus.textContent = error.message || "AI 連線失敗，請稍後再試。";
         }
       } finally {
+        reviewButton.disabled = false;
+      }
+    });
+
+    fixReviewButton.addEventListener("click", async () => {
+      if (fixReviewButton.disabled || !reviewedDrafts || !reviewedReport) return;
+      const currentDrafts = Object.fromEntries(["FB", "IG", "LINE"].map((platform) => [platform, drafts[platform] || ""]));
+      const currentContext = JSON.stringify([settings.brandSpec, settings.checklist.trim() || defaultReviewChecklist, formatMaterialCard()]);
+      if (Object.entries(reviewedDrafts).some(([platform, post]) => currentDrafts[platform] !== post) || currentContext !== reviewedContext) {
+        reviewFixStatus.classList.add("is-error");
+        reviewFixStatus.textContent = "貼文或資料已變更，請重新按 🔍 檢查官。";
+        return;
+      }
+      const generation = workingGeneration;
+      fixReviewButton.disabled = true;
+      reviewButton.disabled = true;
+      fixReviewButton.textContent = "修改中…";
+      reviewFixStatus.classList.remove("is-error");
+      reviewFixStatus.textContent = "正在依報告修改…";
+      try {
+        const result = await askAI([
+          { role: "system", content: `你是【${brand.name}】的小編。依獨立檢查報告逐條修正貼文中真正的 ❌。只使用已確認的素材卡事實，遵守品牌規格；不自行發明商品、搭配、優惠期限或需要人工確認的事。⚠️ 項目只在資訊足夠時處理，仍需確認的事項列於【要問我的】。原本有貼文的每個平台都要用【IG】【FB】【LINE】標題輸出；保留的平台在標題下寫完整可發布的貼文，不需修改的保持原文；報告要求刪除整篇的平台，標題下只寫「（刪除）」。不要解釋或輸出檢查清單。內容一律用台灣繁體中文和台灣用語。` },
+          { role: "user", content: `品牌規格全文：\n${settings.brandSpec}\n\n素材卡全文：\n${formatMaterialCard()}\n\n檢查報告：\n${reviewedReport}\n\n原貼文：\n${Object.entries(reviewedDrafts).map(([platform, post]) => `【${platform}】\n${post.trim() ? post : "（沒有貼文）"}`).join("\n\n")}` }
+        ], {
+          validate: (text) => {
+            const sections = splitAiReply(text);
+            if (containsChecklistInsteadOfPost(sections)) return { reason: "只回了檢查清單", raw: text };
+            const changed = platforms.filter((platform) => Object.prototype.hasOwnProperty.call(sections, platform));
+            if (!changed.length) return { reason: "找不到【平台】標題", raw: text };
+            if (changed.some((platform) => !reviewedDrafts[platform].trim() || !sections[platform].trim()) ||
+                platforms.some((platform) => reviewedDrafts[platform].trim() && !Object.prototype.hasOwnProperty.call(sections, platform))) {
+              return { reason: "修改內容不完整", raw: text };
+            }
+            return null;
+          },
+          onProgress: (message) => { if (generation === workingGeneration) reviewFixStatus.textContent = message; }
+        });
+        if (generation !== workingGeneration || Object.entries(reviewedDrafts).some(([platform, post]) => (drafts[platform] || "") !== post) ||
+            JSON.stringify([settings.brandSpec, settings.checklist.trim() || defaultReviewChecklist, formatMaterialCard()]) !== reviewedContext) {
+          reviewFixStatus.textContent = "貼文已變更，請重新檢查後再修改。";
+          return;
+        }
+        if (result.finishReason === "length") throw new Error("修改回覆被切掉了，請重試；原貼文仍保留。");
+        const sections = splitAiReply(result.text);
+        const updates = {};
+        platforms.forEach((platform) => {
+          if (Object.prototype.hasOwnProperty.call(sections, platform)) {
+            updates[platform] = /^（刪除）$/.test(sections[platform]) ? "" : sections[platform];
+          }
+        });
+        if (!Object.entries(updates).some(([platform, post]) => post !== (drafts[platform] || ""))) {
+          reviewFixStatus.textContent = "AI 沒有修改貼文，請查看報告後重試。";
+          return;
+        }
+        rememberPreviousDrafts();
+        applyAiSections(updates);
+        persistAiContext();
+        reviewedDrafts = null;
+        const notices = [];
+        if (result.fallbackReason && result.provider === "gemini") notices.push(`⚠️ OpenRouter：${result.fallbackReason}。這次改用 Gemini。`);
+        if (result.finishReason === "length") notices.push("回覆可能被切掉了，請再檢查貼文。");
+        reviewFixStatus.textContent = `已修改 ${Object.keys(updates).join("、")}，舊版可按 ↩ 復原上一版。${notices.length ? ` ${notices.join(" ")}` : ""}`;
+      } catch (error) {
+        if (generation === workingGeneration) {
+          reviewFixStatus.classList.add("is-error");
+          reviewFixStatus.textContent = error.message || "AI 連線失敗，請稍後再試。";
+        }
+      } finally {
+        fixReviewButton.textContent = "照報告改好";
+        fixReviewButton.disabled = reviewedDrafts === null || !reviewedReport.includes("❌");
         reviewButton.disabled = false;
       }
     });
