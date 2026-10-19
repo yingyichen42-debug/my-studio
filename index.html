@@ -226,6 +226,10 @@
 
     .save-status { min-height: 20px; margin: 9px 0 0; color: var(--muted); font-size: 12px; }
     #ai-write-questions { white-space: pre-wrap; }
+    #ai-write-status.is-error { color: #b42318; }
+    #ai-write-warning { color: #9a5b18; }
+    #ai-write-raw { white-space: pre-wrap; overflow-wrap: anywhere; }
+    #write-with-ai:disabled { border-color: #a8a29e; background: #a8a29e; cursor: not-allowed; }
 
     .build-button:hover, .primary-button:hover { background: var(--brand-deep); }
 
@@ -287,7 +291,7 @@
     }
 
     .modal-field textarea:focus { outline: 3px solid var(--focus); border-color: var(--brand); }
-    .modal-field input {
+    .modal-field input, .modal-field select {
       display: block;
       width: 100%;
       padding: 13px;
@@ -297,7 +301,9 @@
       color: var(--ink);
       font-size: 13px;
     }
-    .modal-field input:focus { outline: 3px solid var(--focus); border-color: var(--brand); }
+    .modal-field input:focus, .modal-field select:focus { outline: 3px solid var(--focus); border-color: var(--brand); }
+    .ai-settings-group { display: grid; gap: 18px; padding: 18px; border: 1px solid var(--line); border-radius: 10px; }
+    .ai-settings-group h3 { margin: 0; font-size: 16px; }
     .modal-field .prompt-textarea { min-height: 330px; }
     .modal-status { margin: 0; color: var(--muted); font-size: 13px; }
 
@@ -396,6 +402,25 @@
       color: #b42318;
       font-weight: 700;
     }
+
+    .undo-button { align-self: flex-start; margin-top: 8px; }
+    .review-report { display: grid; gap: 3px; overflow-wrap: anywhere; }
+    .review-report-line { padding: 5px 8px; border-radius: 6px; white-space: pre-wrap; }
+    .review-report-line.is-failure { background: #fde8e7; }
+    .review-report-line.is-warning { background: #fff3cb; }
+    #review-status.is-error { color: #b42318; }
+    .ai-helper { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+    .ai-helper h3 { margin: 0 0 12px; font-size: 16px; }
+    .ai-helper-history { max-height: 280px; overflow-y: auto; display: grid; gap: 10px; }
+    .ai-helper-message { padding: 10px 12px; border-radius: 9px; background: var(--surface-soft); font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .ai-helper-message strong { display: block; margin-bottom: 4px; color: var(--brand-deep); }
+    .ai-helper-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .ai-helper-actions button { padding: 7px 10px; font-size: 12px; }
+    .ai-helper-form { display: flex; gap: 8px; margin-top: 12px; }
+    .ai-helper-form input { flex: 1; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-soft); color: var(--ink); }
+    .ai-helper-status { margin: 8px 0 0; font-size: 12px; color: var(--muted); white-space: pre-wrap; }
+    .ai-helper-status.is-error { color: #b42318; }
+    .ai-helper button:disabled { opacity: .55; cursor: not-allowed; }
 
     .preview-panel { background: var(--surface-soft); }
 
@@ -631,6 +656,9 @@
         <button class="build-button" id="build-prompt" type="button">🧩 組好指令</button>
         <button class="build-button save-post-button" id="write-with-ai" type="button">✨ 讓 AI 寫</button>
         <p class="save-status" id="ai-write-status" role="status"></p>
+        <p class="save-status" id="ai-write-warning" hidden></p>
+        <p class="save-status" id="ai-write-usage" hidden></p>
+        <p class="save-status" id="ai-write-raw" hidden></p>
         <p class="save-status" id="ai-write-questions" hidden></p>
         <button class="build-button save-post-button" id="paste-ai-reply" type="button">📥 貼回 AI 寫好的</button>
         <button class="build-button save-post-button" id="save-post" type="button">💾 存檔</button>
@@ -649,6 +677,24 @@
         <label class="editor-label" for="post-content">貼文內容</label>
         <textarea class="post-content" id="post-content" placeholder="從第一句讓人想看的話開始寫……"></textarea>
         <p class="character-count" id="character-count" aria-live="polite"></p>
+        <button class="secondary-button undo-button" id="undo-ai" type="button" disabled>↩ 復原上一版</button>
+        <button class="secondary-button undo-button" id="review-posts" type="button">🔍 檢查官</button>
+        <p class="ai-helper-status" id="review-status" role="status"></p>
+        <section class="ai-helper" aria-labelledby="ai-helper-title">
+          <h3 id="ai-helper-title">💬 AI 小幫手</h3>
+          <div class="ai-helper-history" id="ai-helper-history" aria-live="polite"></div>
+          <div class="ai-helper-actions" id="ai-helper-actions">
+            <button class="secondary-button" type="button">短一點</button>
+            <button class="secondary-button" type="button">換開頭</button>
+            <button class="secondary-button" type="button">少一點 emoji</button>
+            <button class="secondary-button" type="button">更像範例</button>
+          </div>
+          <form class="ai-helper-form" id="ai-helper-form">
+            <input id="ai-helper-input" type="text" aria-label="想修改的內容" placeholder="告訴 AI 想怎麼修改">
+            <button class="primary-button" type="submit">送出</button>
+          </form>
+          <p class="ai-helper-status" id="ai-helper-status" role="status"></p>
+        </section>
       </section>
 
       <section class="panel preview-panel" aria-labelledby="preview-title">
@@ -672,6 +718,17 @@
     </div>
   </main>
 
+  <dialog class="modal" id="review-dialog" aria-labelledby="review-title">
+    <div class="modal-header">
+      <h2 id="review-title">🔍 檢查報告</h2>
+      <button class="modal-close" id="close-review" type="button">關閉</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-status" id="review-notice" hidden></p>
+      <div class="review-report" id="review-report"></div>
+    </div>
+  </dialog>
+
   <dialog class="modal" id="settings-dialog" aria-labelledby="settings-title">
     <div class="modal-header">
       <h2 id="settings-title">設定</h2>
@@ -683,12 +740,71 @@
         <textarea id="settings-brand-spec"></textarea>
       </div>
       <div class="modal-field">
-        <label for="settings-ai-key">AI 金鑰</label>
-        <input id="settings-ai-key" type="password" autocomplete="off">
-      </div>
-      <div class="modal-field">
         <label for="settings-checklist">檢查清單</label>
         <textarea id="settings-checklist"></textarea>
+      </div>
+      <div class="ai-settings-group">
+        <h3>OpenRouter</h3>
+        <div class="modal-field">
+          <label for="settings-ai-key">AI 金鑰</label>
+          <input id="settings-ai-key" type="password" autocomplete="off">
+        </div>
+        <div class="modal-field">
+          <label for="settings-openrouter-model">模型</label>
+          <select id="settings-openrouter-model">
+            <optgroup label="DeepSeek">
+              <option value="deepseek/deepseek-v4.1-flash">deepseek/deepseek-v4.1-flash</option>
+              <option value="deepseek/deepseek-v4-pro">deepseek/deepseek-v4-pro</option>
+              <option value="deepseek/deepseek-v3.2">deepseek/deepseek-v3.2</option>
+            </optgroup>
+            <optgroup label="Kimi">
+              <option value="moonshotai/kimi-k2.6">moonshotai/kimi-k2.6</option>
+              <option value="moonshotai/kimi-k2.5">moonshotai/kimi-k2.5</option>
+              <option value="moonshotai/kimi-k3">moonshotai/kimi-k3</option>
+            </optgroup>
+            <optgroup label="MiniMax">
+              <option value="minimax/minimax-m3">minimax/minimax-m3</option>
+              <option value="minimax/minimax-m2.7">minimax/minimax-m2.7</option>
+              <option value="minimax/minimax-m2.5">minimax/minimax-m2.5</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label for="settings-openrouter-custom-model">或自己打模型名稱</label>
+          <input id="settings-openrouter-custom-model" type="text" autocomplete="off">
+        </div>
+        <div class="modal-field">
+          <label for="settings-reasoning">思考</label>
+          <select id="settings-reasoning">
+            <option value="low">少想一點 low</option>
+            <option value="medium">多想一點 medium</option>
+            <option value="high">想很久 high</option>
+          </select>
+        </div>
+      </div>
+      <div class="ai-settings-group">
+        <h3>Gemini</h3>
+        <div class="modal-field">
+          <label for="settings-gemini-key">Gemini 金鑰</label>
+          <input id="settings-gemini-key" type="password" autocomplete="off">
+        </div>
+        <div class="modal-field">
+          <label for="settings-gemini-model">Gemini 模型</label>
+          <select id="settings-gemini-model">
+            <option value="gemini-3.8-flash">gemini-3.8-flash</option>
+            <option value="gemini-3.6-flash">gemini-3.6-flash</option>
+            <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite</option>
+            <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-field">
+        <label for="settings-ai-order">先用哪一組</label>
+        <select id="settings-ai-order">
+          <option value="openrouter-then-gemini">先用 OpenRouter，失敗自動換 Gemini</option>
+          <option value="gemini-only">只用 Gemini</option>
+          <option value="openrouter-only">只用 OpenRouter</option>
+        </select>
       </div>
     </div>
     <div class="modal-footer">
@@ -748,6 +864,7 @@
 
   <script>
     const AI_MODEL = "deepseek/deepseek-v4.1-flash";
+    const GEMINI_MODEL = "gemini-3.8-flash";
 
     // 之後想調整品牌、平台或素材卡欄位，從這裡修改。
     const brand = {
@@ -798,6 +915,9 @@
     let workingCopy = null;
     let savedPosts = [];
     let igImageDataUrl = "";
+    let aiConversations = {};
+    let previousDrafts = null;
+    let workingGeneration = 0;
     try {
       const storedWorking = JSON.parse(localStorage.getItem(workingStorageKey) || "null");
       if (storedWorking && typeof storedWorking === "object" && !Array.isArray(storedWorking)) {
@@ -821,6 +941,44 @@
     const postContent = document.getElementById("post-content");
     const characterCount = document.getElementById("character-count");
     const phoneScreen = document.getElementById("phone-screen");
+    const undoAiButton = document.getElementById("undo-ai");
+    const aiHelperHistory = document.getElementById("ai-helper-history");
+    const aiHelperStatus = document.getElementById("ai-helper-status");
+
+    function readAiConversations(value) {
+      const conversations = {};
+      if (!value || typeof value !== "object" || Array.isArray(value)) return conversations;
+      platforms.forEach((platform) => {
+        if (Array.isArray(value[platform])) {
+          conversations[platform] = value[platform].filter((entry) =>
+            entry && (entry.role === "user" || entry.role === "assistant") && typeof entry.content === "string"
+          ).map((entry) => ({ role: entry.role, content: entry.content, display: typeof entry.display === "string" ? entry.display : entry.content }));
+        }
+      });
+      return conversations;
+    }
+
+    function renderAiConversation() {
+      aiHelperHistory.replaceChildren();
+      (aiConversations[activePlatform] || []).forEach((entry) => {
+        const message = document.createElement("div");
+        message.className = "ai-helper-message";
+        const label = document.createElement("strong");
+        label.textContent = entry.role === "user" ? "我說的" : "AI 回覆";
+        const content = document.createElement("span");
+        content.textContent = entry.display;
+        message.append(label, content);
+        aiHelperHistory.append(message);
+      });
+      aiHelperHistory.scrollTop = aiHelperHistory.scrollHeight;
+    }
+
+    function updateUndoButton() { undoAiButton.disabled = previousDrafts === null; }
+
+    function rememberPreviousDrafts() {
+      previousDrafts = { ...drafts };
+      updateUndoButton();
+    }
 
     const previewTemplates = {
       FB: `<div class="phone-status" aria-hidden="true"></div>
@@ -901,6 +1059,7 @@
       });
       updatePreviewContent();
       updatePreviewImage();
+      renderAiConversation();
     }
 
     const fieldsContainer = document.getElementById("material-fields");
@@ -955,6 +1114,10 @@
       if (workingCopy.drafts && typeof workingCopy.drafts === "object" && !Array.isArray(workingCopy.drafts)) {
         drafts = workingCopy.drafts;
       }
+      aiConversations = readAiConversations(workingCopy.aiConversations);
+      if (workingCopy.previousDrafts && typeof workingCopy.previousDrafts === "object" && !Array.isArray(workingCopy.previousDrafts)) {
+        previousDrafts = { ...workingCopy.previousDrafts };
+      }
       if (typeof workingCopy.igImageDataUrl === "string" && workingCopy.igImageDataUrl.startsWith("data:image/")) {
         igImageDataUrl = workingCopy.igImageDataUrl;
       }
@@ -975,6 +1138,8 @@
         status: currentPostStatus,
         fields: collectFields(),
         drafts: { ...drafts },
+        aiConversations,
+        previousDrafts,
         igImageDataUrl,
         activePlatform
       };
@@ -986,6 +1151,29 @@
         return false;
       }
     }
+
+    function persistAiContext() {
+      persistWorkingCopy();
+      if (!currentPostId) return;
+      const index = savedPosts.findIndex((post) => post.id === currentPostId);
+      if (index < 0) return;
+      const nextPosts = [...savedPosts];
+      nextPosts[index] = { ...nextPosts[index], aiConversations: readAiConversations(aiConversations), previousDrafts: previousDrafts && { ...previousDrafts } };
+      try {
+        localStorage.setItem(savedPostsStorageKey, JSON.stringify(nextPosts));
+        savedPosts = nextPosts;
+      } catch { document.getElementById("save-post-status").textContent = "無法自動暫存對話，請檢查瀏覽器儲存設定。"; }
+    }
+
+    undoAiButton.addEventListener("click", () => {
+      if (previousDrafts === null) return;
+      const current = { ...drafts };
+      drafts = { ...previousDrafts };
+      previousDrafts = current;
+      showPlatform(activePlatform);
+      saveDrafts();
+      persistAiContext();
+    });
 
     postContent.addEventListener("input", () => {
       drafts[activePlatform] = postContent.value;
@@ -1031,6 +1219,7 @@
       reader.readAsDataURL(file);
     });
     showPlatform(activePlatform);
+    updateUndoButton();
 
     function taipeiDate(date) {
       const parts = new Intl.DateTimeFormat("zh-TW", {
@@ -1061,6 +1250,8 @@
         savedAt: now.toISOString(),
         fields: collectFields(),
         drafts: { ...drafts },
+        aiConversations: readAiConversations(aiConversations),
+        previousDrafts: previousDrafts && { ...previousDrafts },
         igImageDataUrl
       };
       const nextPosts = [...savedPosts.filter((item) => item.id !== id), post];
@@ -1080,6 +1271,7 @@
     const postsStatus = document.getElementById("posts-status");
 
     function openSavedPost(post) {
+      workingGeneration += 1;
       currentPostId = post.id;
       currentPostStatus = normalizePostStatus(post.status);
       materialFields.forEach((field) => {
@@ -1088,6 +1280,11 @@
       });
       drafts = post.drafts && typeof post.drafts === "object" && !Array.isArray(post.drafts)
         ? { ...post.drafts } : {};
+      aiConversations = readAiConversations(post.aiConversations);
+      previousDrafts = post.previousDrafts && typeof post.previousDrafts === "object" && !Array.isArray(post.previousDrafts)
+        ? { ...post.previousDrafts } : null;
+      updateUndoButton();
+      aiHelperStatus.textContent = "";
       igImageDataUrl = typeof post.igImageDataUrl === "string" && post.igImageDataUrl.startsWith("data:image/")
         ? post.igImageDataUrl : "";
       activePlatform = platforms[0] || "IG";
@@ -1217,10 +1414,15 @@
     });
     document.getElementById("close-posts").addEventListener("click", () => postsDialog.close());
     document.getElementById("new-post").addEventListener("click", () => {
+      workingGeneration += 1;
       currentPostId = null;
       currentPostStatus = postStatuses[0];
       materialFields.forEach((field) => { document.getElementById(field.id).value = ""; });
       drafts = {};
+      aiConversations = {};
+      previousDrafts = null;
+      updateUndoButton();
+      aiHelperStatus.textContent = "";
       igImageDataUrl = "";
       document.getElementById("ig-image-upload").value = "";
       activePlatform = platforms[0] || "IG";
@@ -1231,31 +1433,63 @@
     });
 
     const settingsKey = `社群工作台：${brand.account}：設定`;
-    let settings = { brandSpec: defaultBrandSpec, checklist: defaultChecklist, aiKey: "" };
+    let settings = {
+      brandSpec: defaultBrandSpec, checklist: defaultChecklist, aiKey: "",
+      openRouterModel: AI_MODEL, openRouterCustomModel: "", reasoning: "low",
+      geminiKey: "", geminiModel: GEMINI_MODEL, aiOrder: "openrouter-then-gemini"
+    };
     try {
       const storedSettings = JSON.parse(localStorage.getItem(settingsKey) || "null");
       if (storedSettings && typeof storedSettings === "object") {
         if (typeof storedSettings.brandSpec === "string") settings.brandSpec = storedSettings.brandSpec;
         if (typeof storedSettings.checklist === "string") settings.checklist = storedSettings.checklist;
         if (typeof storedSettings.aiKey === "string") settings.aiKey = storedSettings.aiKey;
+        if (typeof storedSettings.openRouterModel === "string") settings.openRouterModel = storedSettings.openRouterModel;
+        if (typeof storedSettings.openRouterCustomModel === "string") settings.openRouterCustomModel = storedSettings.openRouterCustomModel;
+        if (typeof storedSettings.reasoning === "string") settings.reasoning = storedSettings.reasoning;
+        if (typeof storedSettings.geminiKey === "string") settings.geminiKey = storedSettings.geminiKey;
+        if (typeof storedSettings.geminiModel === "string") settings.geminiModel = storedSettings.geminiModel;
+        if (typeof storedSettings.aiOrder === "string") settings.aiOrder = storedSettings.aiOrder;
       }
     } catch { /* 無法讀取時使用檔案內建的初始內容。 */ }
 
     const settingsDialog = document.getElementById("settings-dialog");
     const brandSpecInput = document.getElementById("settings-brand-spec");
     const aiKeyInput = document.getElementById("settings-ai-key");
+    const openRouterModelInput = document.getElementById("settings-openrouter-model");
+    const openRouterCustomModelInput = document.getElementById("settings-openrouter-custom-model");
+    const reasoningInput = document.getElementById("settings-reasoning");
+    const geminiKeyInput = document.getElementById("settings-gemini-key");
+    const geminiModelInput = document.getElementById("settings-gemini-model");
+    const aiOrderInput = document.getElementById("settings-ai-order");
     const checklistInput = document.getElementById("settings-checklist");
     const settingsStatus = document.getElementById("settings-status");
     document.getElementById("open-settings").addEventListener("click", () => {
       brandSpecInput.value = settings.brandSpec;
       aiKeyInput.value = settings.aiKey;
+      openRouterModelInput.value = settings.openRouterModel;
+      if (!openRouterModelInput.value) openRouterModelInput.value = AI_MODEL;
+      openRouterCustomModelInput.value = settings.openRouterCustomModel;
+      reasoningInput.value = settings.reasoning;
+      if (!reasoningInput.value) reasoningInput.value = "low";
+      geminiKeyInput.value = settings.geminiKey;
+      geminiModelInput.value = settings.geminiModel;
+      if (!geminiModelInput.value) geminiModelInput.value = GEMINI_MODEL;
+      aiOrderInput.value = settings.aiOrder;
+      if (!aiOrderInput.value) aiOrderInput.value = "openrouter-then-gemini";
       checklistInput.value = settings.checklist;
       settingsStatus.textContent = "";
       settingsDialog.showModal();
     });
     document.getElementById("close-settings").addEventListener("click", () => settingsDialog.close());
     document.getElementById("save-settings").addEventListener("click", () => {
-      settings = { brandSpec: brandSpecInput.value, checklist: checklistInput.value, aiKey: aiKeyInput.value.trim() };
+      settings = {
+        brandSpec: brandSpecInput.value, checklist: checklistInput.value,
+        aiKey: aiKeyInput.value.trim(), openRouterModel: openRouterModelInput.value,
+        openRouterCustomModel: openRouterCustomModelInput.value.trim(), reasoning: reasoningInput.value,
+        geminiKey: geminiKeyInput.value.trim(), geminiModel: geminiModelInput.value,
+        aiOrder: aiOrderInput.value
+      };
       try {
         localStorage.setItem(settingsKey, JSON.stringify(settings));
         settingsStatus.textContent = "已儲存到這個瀏覽器。";
@@ -1283,23 +1517,27 @@
       return `${year}/${String(month).padStart(2, "0")}/${String(day).padStart(2, "0")}（${weekdays[date.getDay()]}）${suffix}`;
     }
 
-    function assemblePrompt() {
-      const platformTitles = platforms.map((platform) => `【${platform}】`).join("、");
-      const materialLines = materialFields.map((field, index) => {
+    function formatMaterialCard() {
+      return materialFields.map((field, index) => {
         const value = document.getElementById(field.id).value.trim();
         return `${field.label}：${index === 0 ? formatDateWithWeekday(value) : value || "未填"}`;
-      });
+      }).join("\n");
+    }
+
+    function assemblePrompt() {
+      const platformTitles = platforms.map((platform) => `【${platform}】`).join("、");
       const parts = [
         "（這段只要回覆文字，不要建立或修改任何檔案。）",
         `你是【${brand.name}】的小編。請照品牌規格，用素材卡的內容，寫${platformTitles}的貼文，每個平台一篇。`,
         "規則：\n一律用台灣的繁體中文和台灣用語。不要出現簡體字，也不要用大陸用語（例如：視頻→影片、質量→品質、優化→改善、信息→訊息、網絡→網路、用戶→客人或使用者）。\n素材卡上沒有的事不要寫；只能在某個平台說的，只寫在那個平台；先不要講的，每一篇都不能寫；還不確定的不要寫，寫完列出來問我。",
-        `回覆格式：每個平台用${platformTitles}這樣的標題分開。`,
+        `回覆格式：每個平台用${platformTitles}這樣的標題分開；標題下面直接寫該平台可發布的完整貼文。需要我確認的事另用【要問我的】列出，不要放進貼文。`,
         `品牌規格全文：\n${settings.brandSpec}`,
-        `素材卡：\n${materialLines.join("\n")}`
+        `素材卡：\n${formatMaterialCard()}`
       ];
       if (settings.checklist.trim()) {
-        parts.push(`寫完照這張清單檢查，有 ❌ 先自己改好。\n${settings.checklist}`);
+        parts.push(`先寫貼文初稿，再依這張清單在內部逐項檢查；有問題就修改貼文。清單若要求列出 ✅ 或 ❌，也只在內部執行，不要把檢查紀錄當成貼文。\n${settings.checklist}`);
       }
+      parts.push(`最後只回覆${platformTitles}的完整貼文，以及有需要時的【要問我的】。不要輸出檢查過程、✅／❌清單、評語或說明；每個平台標題下面必須是貼文，不是判斷結果。`);
       return parts.join("\n\n");
     }
 
@@ -1345,6 +1583,14 @@
       return sections;
     }
 
+    function containsChecklistInsteadOfPost(sections) {
+      return platforms.some((platform) => {
+        const content = sections[platform] || "";
+        const checkedLines = content.split("\n").filter((line) => /[✅❌]/u.test(line)).length;
+        return checkedLines >= 2;
+      });
+    }
+
     function applyAiSections(sections) {
       const updatedPlatforms = platforms.filter((platform) =>
         Object.prototype.hasOwnProperty.call(sections, platform)
@@ -1360,45 +1606,429 @@
 
     const writeWithAiButton = document.getElementById("write-with-ai");
     const aiWriteStatus = document.getElementById("ai-write-status");
+    const aiWriteWarning = document.getElementById("ai-write-warning");
+    const aiWriteUsage = document.getElementById("ai-write-usage");
+    const aiWriteRaw = document.getElementById("ai-write-raw");
     const aiWriteQuestions = document.getElementById("ai-write-questions");
+    const aiUsageKey = `社群工作台：${brand.account}：AI用量`;
+    const providerNames = { openrouter: "OpenRouter", gemini: "Gemini" };
+
+    function todayKey() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    }
+
+    function freshDailyUsage() {
+      return { date: todayKey(), openrouter: { calls: 0, cost: 0 }, gemini: { calls: 0, cost: 0 } };
+    }
+
+    let dailyAiUsage = freshDailyUsage();
+    try {
+      const stored = JSON.parse(localStorage.getItem(aiUsageKey) || "null");
+      if (stored?.date === todayKey() && stored.openrouter && stored.gemini) {
+        for (const provider of ["openrouter", "gemini"]) {
+          dailyAiUsage[provider].calls = Number.isFinite(stored[provider].calls) ? stored[provider].calls : 0;
+          dailyAiUsage[provider].cost = Number.isFinite(stored[provider].cost) ? stored[provider].cost : 0;
+        }
+      }
+    } catch { /* 無法讀取時從今天重新計算。 */ }
+
+    function currentDailyUsage() {
+      if (dailyAiUsage.date !== todayKey()) dailyAiUsage = freshDailyUsage();
+      return dailyAiUsage;
+    }
+
+    function saveDailyUsage() {
+      try { localStorage.setItem(aiUsageKey, JSON.stringify(dailyAiUsage)); }
+      catch { /* 儲存不可用時仍顯示本次瀏覽期間的用量。 */ }
+    }
+
+    function addAiCall(provider) {
+      currentDailyUsage()[provider].calls += 1;
+      saveDailyUsage();
+    }
+
+    function addAiUsage(provider, usage, runUsage) {
+      if (!usage || typeof usage !== "object") return;
+      if (typeof usage.total_tokens === "number" && Number.isFinite(usage.total_tokens)) {
+        runUsage[provider].tokens += usage.total_tokens;
+        runUsage[provider].hasTokens = true;
+      }
+      if (typeof usage.cost === "number" && Number.isFinite(usage.cost)) {
+        runUsage[provider].cost += usage.cost;
+        runUsage[provider].hasCost = true;
+        currentDailyUsage()[provider].cost += usage.cost;
+        saveDailyUsage();
+      }
+    }
+
+    function formatAiCost(cost) {
+      return `$${Number(cost).toFixed(6)}`;
+    }
+
+    function formatDailyAiUsage() {
+      const today = currentDailyUsage();
+      return `今天 OpenRouter ${today.openrouter.calls} 次 ${formatAiCost(today.openrouter.cost)}、Gemini ${today.gemini.calls} 次`;
+    }
+
+    function formatAiUsage(provider, runUsage) {
+      const current = runUsage[provider];
+      const tokens = current.hasTokens ? current.tokens : "—";
+      const cost = current.hasCost ? formatAiCost(current.cost) : "$—（API 未提供費用）";
+      return `這次用 ${providerNames[provider]}：${tokens} tokens 約 ${cost}｜${formatDailyAiUsage()}`;
+    }
+
+    function aiFailure(provider, reason, raw = "") {
+      const error = new Error(reason);
+      error.provider = provider;
+      error.raw = raw;
+      return error;
+    }
+
+    function apiErrorMessage(data) {
+      const item = Array.isArray(data) ? data[0] : data;
+      return String(typeof item === "string" ? item : item?.error?.message || item?.message || "");
+    }
+
+    function httpErrorReason(provider, status, message) {
+      if (provider === "openrouter") {
+        return { 401: "金鑰不對", 402: "全班的額度用完了", 404: "模型名稱打錯了", 429: "太多人同時在用" }[status]
+          || `服務出錯（HTTP ${status}）`;
+      }
+      if (status === 400 && /api[\s_-]*key/i.test(message)) return "金鑰不對";
+      return { 403: "沒有權限", 404: "模型名稱不對，或免費版不能用", 429: "免費額度用完了" }[status]
+        || `服務出錯（HTTP ${status}）`;
+    }
+
+    function providerRequest(provider, messages, retryForLength = false) {
+      if (provider === "openrouter") {
+        return {
+          url: "https://openrouter.ai/api/v1/chat/completions",
+          key: settings.aiKey,
+          body: {
+            model: settings.openRouterCustomModel || settings.openRouterModel,
+            messages, max_tokens: retryForLength ? 8000 : 4000,
+            reasoning: { effort: retryForLength ? "low" : settings.reasoning, exclude: true },
+            usage: { include: true }
+          }
+        };
+      }
+      return {
+        url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        key: settings.geminiKey,
+        body: { model: settings.geminiModel, messages, reasoning_effort: "low" }
+      };
+    }
+
+    async function requestAiReply(provider, messages, runUsage, retryForLength = false) {
+      const request = providerRequest(provider, messages, retryForLength);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000);
+      addAiCall(provider);
+      try {
+        const response = await fetch(request.url, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${request.key}`, "Content-Type": "application/json" },
+          body: JSON.stringify(request.body),
+          signal: controller.signal
+        });
+        let data;
+        try { data = await response.json(); }
+        catch (error) {
+          if (controller.signal.aborted || error.name === "AbortError") throw error;
+          data = null;
+        }
+        if (!response.ok) throw aiFailure(provider, httpErrorReason(provider, response.status, apiErrorMessage(data)));
+        if (!data) throw aiFailure(provider, "回覆格式有問題");
+        const result = Array.isArray(data) ? data[0] : data;
+        addAiUsage(provider, result?.usage, runUsage);
+        const choice = result?.choices?.[0];
+        const text = typeof choice?.message?.content === "string"
+          ? choice.message.content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim()
+          : "";
+        if (!text) {
+          const error = aiFailure(provider, choice?.finish_reason === "length"
+            ? "想太久，字數用完了（⚙ 設定把思考調成少想一點）"
+            : "沒有回覆文字");
+          if (choice?.finish_reason === "length") error.code = "empty_length";
+          throw error;
+        }
+        return { text, finishReason: choice?.finish_reason };
+      } catch (error) {
+        if (error.provider === provider) throw error;
+        if (controller.signal.aborted || error.name === "AbortError") {
+          throw aiFailure(provider, provider === "gemini"
+            ? "等太久（超過 60 秒，可在 ⚙ 設定改選其他 Gemini 模型後重試）"
+            : "等太久");
+        }
+        if (error instanceof TypeError) throw aiFailure(provider, "連不到（檢查網路）");
+        throw aiFailure(provider, "回覆格式有問題");
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
+    function postReplyIssue(text) {
+      const sections = splitAiReply(text);
+      if (containsChecklistInsteadOfPost(sections)) return { reason: "只回了檢查清單" };
+      if (!platforms.some((platform) => Object.prototype.hasOwnProperty.call(sections, platform))) {
+        return { reason: "找不到【平台】標題", raw: text };
+      }
+      return null;
+    }
+
+    async function askAI(messages, options = {}) {
+      if (!settings.aiKey && !settings.geminiKey) throw new Error("還沒填金鑰。按 ⚙ 設定。");
+      const order = settings.aiOrder === "gemini-only" ? ["gemini"]
+        : settings.aiOrder === "openrouter-only" ? ["openrouter"]
+          : settings.geminiKey ? ["openrouter", "gemini"] : ["openrouter"];
+      const runUsage = {
+        openrouter: { tokens: 0, hasTokens: false, cost: 0, hasCost: false },
+        gemini: { tokens: 0, hasTokens: false, cost: 0, hasCost: false }
+      };
+      const failures = [];
+      for (const provider of order) {
+        const key = provider === "openrouter" ? settings.aiKey : settings.geminiKey;
+        if (!key) {
+          failures.push({ provider, reason: "還沒填金鑰", raw: "" });
+          continue;
+        }
+        let unsplitRaw = "";
+        try {
+          let result;
+          try {
+            result = await requestAiReply(provider, messages, runUsage);
+          } catch (error) {
+            if (provider !== "openrouter" || error.code !== "empty_length") throw error;
+            options.onProgress?.("OpenRouter 字數用完，正在降低思考量並重試（會增加一次 API 呼叫）…");
+            result = await requestAiReply(provider, messages, runUsage, true);
+          }
+          let issue = options.validate?.(result.text);
+          if (issue?.raw) unsplitRaw = issue.raw;
+          if (issue && options.correction) {
+            result = await requestAiReply(provider, [
+              ...messages,
+              { role: "assistant", content: result.text },
+              { role: "user", content: options.correction }
+            ], runUsage);
+            issue = options.validate(result.text);
+            if (issue?.raw) unsplitRaw = issue.raw;
+          }
+          if (issue) throw aiFailure(provider, issue.reason, issue.raw || "");
+          return { ...result, provider, runUsage, fallbackReason: failures[0]?.reason || "" };
+        } catch (error) {
+          failures.push({ provider, reason: error.message || "服務出錯", raw: error.raw || unsplitRaw });
+          if (provider === "openrouter" && order.includes("gemini")) {
+            options.onProgress?.(`OpenRouter：${error.message || "服務出錯"}。正在改用 Gemini…`);
+          }
+        }
+      }
+      const description = failures.map((failure) => `${providerNames[failure.provider]}：${failure.reason}`).join("；");
+      const noBackup = order.length === 1 && order[0] === "openrouter" && !settings.geminiKey ? "；沒有備胎" : "";
+      const error = new Error(`${description}${noBackup}`);
+      error.raw = failures.map((failure) => failure.raw).filter(Boolean).at(-1) || "";
+      throw error;
+    }
+
     writeWithAiButton.addEventListener("click", async () => {
+      if (writeWithAiButton.disabled) return;
+      aiWriteStatus.classList.remove("is-error");
+      aiWriteStatus.textContent = "";
+      aiWriteWarning.hidden = true;
+      aiWriteWarning.textContent = "";
+      aiWriteUsage.hidden = true;
+      aiWriteUsage.textContent = "";
+      aiWriteRaw.hidden = true;
+      aiWriteRaw.textContent = "";
       aiWriteQuestions.hidden = true;
       aiWriteQuestions.textContent = "";
-      if (!settings.aiKey) {
-        aiWriteStatus.textContent = "請先到 ⚙ 設定填入 AI 金鑰並儲存。";
-        return;
-      }
-
       writeWithAiButton.disabled = true;
+      writeWithAiButton.textContent = "✨ AI 寫作中…";
       aiWriteStatus.textContent = "AI 寫作中…";
+      const requestGeneration = workingGeneration;
       try {
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${settings.aiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: AI_MODEL,
-            messages: [{ role: "user", content: assemblePrompt() }]
-          })
+        const prompt = assemblePrompt();
+        const result = await askAI([{ role: "user", content: prompt }], {
+          validate: postReplyIssue,
+          correction: "請完成寫作，現在只輸出【IG】【LINE】【FB】標題及各平台可直接發布的完整貼文；待確認事項另列【要問我的】。不要輸出檢查清單、✅ 或 ❌。",
+          onProgress: (message) => { if (requestGeneration === workingGeneration) aiWriteStatus.textContent = message; }
         });
-        if (!response.ok) throw new Error(`AI 連線失敗（HTTP ${response.status}），請檢查金鑰或稍後再試。`);
-        const reply = (await response.json()).choices?.[0]?.message?.content;
-        if (typeof reply !== "string") throw new Error("AI 回覆沒有文字，請稍後再試。");
-
-        const sections = splitAiReply(reply);
+        if (requestGeneration !== workingGeneration) {
+          aiWriteStatus.textContent = "貼文已切換，未套用 AI 回覆。";
+          return;
+        }
+        const sections = splitAiReply(result.text);
+        rememberPreviousDrafts();
         const updatedPlatforms = applyAiSections(sections);
+        persistAiContext();
         const questions = sections["要問我的"] || "";
         aiWriteQuestions.textContent = questions ? `【要問我的】\n${questions}` : "";
         aiWriteQuestions.hidden = !questions;
-        aiWriteStatus.textContent = updatedPlatforms.length
-          ? `已分到：${updatedPlatforms.join("、")}。`
-          : "沒有找到【FB】【IG】或【LINE】標題，請用 📥 貼回檢查回覆格式。";
+        aiWriteStatus.textContent = `已分到：${updatedPlatforms.join("、")}。`;
+        const warnings = [];
+        if (result.fallbackReason && result.provider === "gemini") {
+          warnings.push(`⚠️ OpenRouter：${result.fallbackReason}。這次改用 Gemini。`);
+        }
+        if (result.finishReason === "length") warnings.push("回覆可能被切掉了");
+        aiWriteWarning.textContent = warnings.join(" ");
+        aiWriteWarning.hidden = warnings.length === 0;
+        aiWriteUsage.textContent = formatAiUsage(result.provider, result.runUsage);
+        aiWriteUsage.hidden = false;
       } catch (error) {
+        aiWriteStatus.classList.add("is-error");
         aiWriteStatus.textContent = error.message || "AI 連線失敗，請稍後再試。";
+        const today = currentDailyUsage();
+        if (today.openrouter.calls || today.gemini.calls) {
+          aiWriteUsage.textContent = formatDailyAiUsage();
+          aiWriteUsage.hidden = false;
+        }
+        if (error.raw) {
+          aiWriteRaw.textContent = `AI 原文如下，可複製後用 📥 貼回 手動分：\n${error.raw}`;
+          aiWriteRaw.hidden = false;
+        }
       } finally {
         writeWithAiButton.disabled = false;
+        writeWithAiButton.textContent = "✨ 讓 AI 寫";
+      }
+    });
+
+    const aiHelperForm = document.getElementById("ai-helper-form");
+    const aiHelperInput = document.getElementById("ai-helper-input");
+    const aiHelperControls = [...document.querySelectorAll("#ai-helper-actions button"), aiHelperForm.querySelector("button")];
+    let aiHelperBusy = false;
+
+    async function sendAiHelper(instruction) {
+      if (aiHelperBusy) return;
+      const requestText = instruction.trim();
+      if (!requestText) return;
+      const platform = activePlatform;
+      const original = typeof drafts[platform] === "string" ? drafts[platform] : "";
+      aiHelperStatus.classList.remove("is-error");
+      if (!original.trim()) {
+        aiHelperStatus.textContent = "先讓 AI 寫一篇";
+        return;
+      }
+
+      const generation = workingGeneration;
+      const userContent = `目前的【${platform}】貼文：\n${original}\n\n請這樣改：${requestText}`;
+      const history = (aiConversations[platform] || []).slice(-8).map(({ role, content }) => ({ role, content }));
+      const systemContent = `你是【${brand.name}】的小編助理。使用者會叫你修改一篇【${platform}】貼文。只改使用者要求的地方，其他保持原樣；不能加素材卡上沒有的事實；遵守品牌規格；一律用台灣的繁體中文和台灣用語。不要出現簡體字，也不要用大陸用語（例如：視頻→影片、質量→品質、優化→改善、信息→訊息、網絡→網路、用戶→客人或使用者）。只回覆改好以後的整篇貼文，不要解釋、不要加標題。\n\n品牌規格全文：\n${settings.brandSpec}\n\n素材卡：\n${formatMaterialCard()}`;
+      const messages = [{ role: "system", content: systemContent }, ...history, { role: "user", content: userContent }];
+
+      aiHelperBusy = true;
+      aiHelperControls.forEach((control) => { control.disabled = true; });
+      aiHelperStatus.textContent = "AI 修改中…";
+      try {
+        const result = await askAI(messages, {
+          onProgress: (message) => { if (generation === workingGeneration) aiHelperStatus.textContent = message; }
+        });
+        if (generation !== workingGeneration) return;
+        const conversation = aiConversations[platform] || (aiConversations[platform] = []);
+        conversation.push({ role: "user", content: userContent, display: requestText });
+        conversation.push({ role: "assistant", content: result.text, display: result.text });
+        if (drafts[platform] !== original) {
+          aiHelperStatus.textContent = "貼文已變更，AI 回覆已保留在對話中，未覆蓋目前內容。";
+        } else {
+          rememberPreviousDrafts();
+          drafts[platform] = result.text;
+          saveDrafts();
+          if (activePlatform === platform) showPlatform(platform);
+          const notices = [];
+          if (result.fallbackReason && result.provider === "gemini") notices.push(`⚠️ OpenRouter：${result.fallbackReason}。這次改用 Gemini。`);
+          if (result.finishReason === "length") notices.push("回覆可能被切掉了");
+          aiHelperStatus.textContent = notices.join(" ") || "已更新貼文。";
+        }
+        if (activePlatform === platform) renderAiConversation();
+        persistAiContext();
+        if (aiHelperInput.value.trim() === requestText) aiHelperInput.value = "";
+      } catch (error) {
+        if (generation === workingGeneration) {
+          aiHelperStatus.classList.add("is-error");
+          aiHelperStatus.textContent = error.message || "AI 連線失敗，請稍後再試。";
+        }
+      } finally {
+        aiHelperBusy = false;
+        aiHelperControls.forEach((control) => { control.disabled = false; });
+      }
+    }
+
+    aiHelperForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      sendAiHelper(aiHelperInput.value);
+    });
+    document.querySelectorAll("#ai-helper-actions button").forEach((button) => {
+      button.addEventListener("click", () => sendAiHelper(button.textContent));
+    });
+
+    const reviewButton = document.getElementById("review-posts");
+    const reviewStatus = document.getElementById("review-status");
+    const reviewDialog = document.getElementById("review-dialog");
+    const reviewNotice = document.getElementById("review-notice");
+    const reviewReport = document.getElementById("review-report");
+    const defaultReviewChecklist = [
+      "1. 日期、價格對不對？",
+      "2. 有沒有多加素材卡沒有的事？",
+      "3. 只能在某平台講的有沒有跑到其他平台？",
+      "4. 先不要講的有沒有出現？",
+      "5. 有沒有不能用的字？",
+      "6. 有沒有簡體字或大陸用語？"
+    ].join("\n");
+
+    document.getElementById("close-review").addEventListener("click", () => reviewDialog.close());
+    reviewButton.addEventListener("click", async () => {
+      if (reviewButton.disabled) return;
+      reviewStatus.classList.remove("is-error");
+      const postSnapshot = Object.fromEntries(["FB", "IG", "LINE"].map((platform) => [
+        platform, typeof drafts[platform] === "string" ? drafts[platform] : ""
+      ]));
+      if (!Object.values(postSnapshot).some((post) => post.trim())) {
+        reviewStatus.textContent = "還沒有貼文可以檢查";
+        return;
+      }
+
+      const generation = workingGeneration;
+      const checklist = settings.checklist.trim() || defaultReviewChecklist;
+      const messages = [
+        { role: "system", content: `你是【${brand.name}】的審核官，專門挑毛病，不負責誇獎。把每一篇貼文照檢查清單一條一條對。✅ 符合；❌ 不符合（寫出哪一句有問題、該怎麼改）；⚠️ 要靠人判斷的，先給意見。回覆格式：【平台名稱】換行，然後每條一行「編號 符號 一句話」，最後【總結】列出要人工確認的事。不管清單有沒有寫，都另外檢查有沒有簡體字或大陸用語。報告也用台灣繁體中文寫。` },
+        { role: "user", content: `品牌規格全文：\n${settings.brandSpec}\n\n素材卡全文：\n${formatMaterialCard()}\n\n檢查清單：\n${checklist}\n\n各平台貼文：\n${Object.entries(postSnapshot).map(([platform, post]) => `【${platform}】\n${post.trim() ? post : "（沒有貼文）"}`).join("\n\n")}` }
+      ];
+
+      reviewButton.disabled = true;
+      reviewStatus.textContent = "檢查中…";
+      try {
+        const result = await askAI(messages, {
+          onProgress: (message) => { if (generation === workingGeneration) reviewStatus.textContent = message; }
+        });
+        if (generation !== workingGeneration) {
+          reviewStatus.textContent = "貼文已切換，未顯示這次檢查報告。";
+          return;
+        }
+        reviewReport.replaceChildren();
+        result.text.split(/\r?\n/).forEach((line) => {
+          const row = document.createElement("div");
+          row.className = "review-report-line";
+          if (line.includes("❌")) row.classList.add("is-failure");
+          else if (line.includes("⚠️") || line.includes("⚠")) row.classList.add("is-warning");
+          row.textContent = line || "\u00a0";
+          reviewReport.append(row);
+        });
+        const notices = [];
+        if (result.fallbackReason && result.provider === "gemini") notices.push(`⚠️ OpenRouter：${result.fallbackReason}。這次改用 Gemini。`);
+        if (result.finishReason === "length") notices.push("回覆可能被切掉了");
+        if (Object.entries(postSnapshot).some(([platform, post]) => (drafts[platform] || "") !== post)) {
+          notices.push("貼文在檢查期間已變更，報告是依送出時的內容產生。");
+        }
+        reviewNotice.textContent = notices.join(" ");
+        reviewNotice.hidden = notices.length === 0;
+        reviewStatus.textContent = "檢查完成。";
+        reviewDialog.showModal();
+      } catch (error) {
+        if (generation === workingGeneration) {
+          reviewStatus.classList.add("is-error");
+          reviewStatus.textContent = error.message || "AI 連線失敗，請稍後再試。";
+        }
+      } finally {
+        reviewButton.disabled = false;
       }
     });
 
