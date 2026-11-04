@@ -443,6 +443,35 @@
       font-weight: 400;
     }
 
+    .post-images { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
+    .post-images-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .post-images-heading h4 { margin: 0; font-size: 15px; }
+    .post-images input[type="file"] { display: none; }
+    .image-description { width: 100%; min-height: 42px; margin-top: 12px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-soft); color: var(--ink); font: inherit; font-size: 13px; resize: vertical; }
+    .image-generate-actions { display: grid; grid-template-columns: minmax(0, 1fr) 70px minmax(0, 1fr); gap: 8px; margin-top: 9px; }
+    .image-generate-button { width: 100%; }
+    .image-count-picker { display: grid; gap: 3px; color: var(--muted); font-size: 11px; font-weight: 700; }
+    .image-count-picker select { min-width: 0; min-height: 40px; padding: 7px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-soft); color: var(--ink); font: inherit; }
+    .image-generate-status { min-height: 18px; margin: 7px 0 0; color: var(--muted); font-size: 12px; white-space: pre-wrap; }
+    .image-generate-status.is-error { color: #b42318; }
+    #generate-image:disabled { border-color: #a8a29e; background: #a8a29e; cursor: not-allowed; }
+    .image-text-controls { display: grid; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .image-text-controls h5 { margin: 0; font-size: 14px; }
+    .image-text-controls input, .image-text-controls select { width: 100%; min-height: 40px; padding: 8px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-soft); color: var(--ink); font: inherit; font-size: 13px; }
+    .image-text-selects { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+    .image-text-selects label, .image-download label { display: grid; gap: 4px; color: var(--muted); font-size: 11px; font-weight: 700; }
+    .image-download { display: grid; gap: 8px; margin-top: 14px; }
+    .image-download .secondary-button { width: 100%; }
+    .image-picker { display: inline-flex; align-items: center; justify-content: center; padding: 8px 11px; border: 1px solid var(--brand); border-radius: 8px; color: var(--brand-deep); font-size: 12px; font-weight: 700; cursor: pointer; }
+    .image-picker:hover { background: var(--surface-soft); }
+    .image-thumbnails { display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 9px; margin-top: 12px; }
+    .image-thumbnail { position: relative; aspect-ratio: 1; padding: 0; overflow: hidden; border: 2px solid transparent; border-radius: 8px; background: var(--preview); cursor: pointer; }
+    .image-thumbnail.is-primary { border-color: var(--brand); }
+    .image-thumbnail img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .image-remove { position: absolute; top: 3px; right: 3px; display: grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: rgba(36, 31, 27, .8); color: white; font-size: 15px; line-height: 1; cursor: pointer; }
+    .storage-usage { min-height: 18px; margin: 9px 0 0; color: var(--muted); font-size: 11px; }
+    .storage-usage.is-error { color: #b42318; }
+
     .phone {
       width: min(100%, 278px);
       padding: 10px;
@@ -531,10 +560,27 @@
     }
 
     .preview-image.has-upload {
-      background-position: center;
-      background-repeat: no-repeat;
-      background-size: cover;
+      padding: 0;
     }
+
+    .preview-image.has-upload img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .preview-image.fb-image { aspect-ratio: 1 / 1; }
+    .preview-image.ig-image, .preview-image.threads-image { aspect-ratio: 1080 / 1350; }
+    .preview-image.line-image { aspect-ratio: 1 / 1; border: 0; }
+
+    .ig-carousel { overflow: hidden; background: var(--preview); }
+    .ig-carousel-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+    .ig-carousel-track::-webkit-scrollbar { display: none; }
+    .ig-carousel-slide { flex: 0 0 100%; scroll-snap-align: start; }
+    .ig-carousel-slide .preview-image { width: 100%; }
+    .ig-carousel-dots { display: flex; justify-content: center; gap: 5px; padding: 7px 0; }
+    .ig-carousel-dot { width: 6px; height: 6px; border-radius: 50%; background: #c9c2bb; }
+    .ig-carousel-dot.is-active { background: var(--brand); }
 
     .social-actions {
       display: flex;
@@ -568,7 +614,7 @@
 
     .social-time { color: var(--muted); font-size: 10px; }
 
-    .fb-image { aspect-ratio: 1.5 / 1; font-size: 12px; font-weight: 400; }
+    .fb-image { font-size: 12px; font-weight: 400; }
 
     .fb-actions {
       display: flex;
@@ -595,6 +641,9 @@
       white-space: pre-wrap;
     }
 
+    .line-content { width: min(100%, 214px); }
+    .line-image-bubble { overflow: hidden; margin-bottom: 7px; border-radius: 4px 14px 14px 14px; background: var(--surface); }
+
     .line-bubble .preview-date { padding: 5px 0 0; }
 
     .threads-post { display: flex; align-items: flex-start; gap: 9px; padding: 18px 12px; }
@@ -607,6 +656,12 @@
     @media (max-width: 1120px) {
       .workspace { grid-template-columns: minmax(260px, .95fr) minmax(360px, 1.25fr); }
       .preview-panel { grid-column: 1 / -1; min-height: auto; }
+    }
+
+    @media (max-width: 999px) {
+      .workspace { grid-template-columns: minmax(0, 1fr); }
+      .workspace > .panel { width: 100%; }
+      .preview-panel { grid-column: auto; }
     }
 
     @media (max-width: 880px) {
@@ -653,6 +708,42 @@
           <span class="panel-tag">素材</span>
         </div>
         <div id="material-fields"></div>
+        <section class="post-images" aria-labelledby="post-images-title">
+          <div class="post-images-heading">
+            <h4 id="post-images-title">🖼 這篇的圖</h4>
+            <label class="image-picker" for="post-images-upload">📤 上傳</label>
+          </div>
+          <input id="post-images-upload" type="file" accept="image/*" multiple>
+          <div class="image-thumbnails" id="image-thumbnails"></div>
+          <p class="storage-usage" id="storage-usage">瀏覽器的抽屜：已用 0 MB</p>
+          <p class="storage-usage" id="image-storage-usage">圖片倉庫：讀取中…</p>
+          <textarea class="image-description" id="image-description" placeholder="圖片描述（要畫什麼）"></textarea>
+          <div class="image-generate-actions">
+            <button class="primary-button image-generate-button" id="generate-image" type="button">🎨 生圖</button>
+            <label class="image-count-picker">張數
+              <select id="image-count" aria-label="生圖張數">
+                <option value="1" selected>1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+              </select>
+            </label>
+            <button class="secondary-button image-generate-button" id="plan-and-generate-image" type="button">🪄 AI 想圖再畫</button>
+          </div>
+          <p class="image-generate-status" id="image-generate-status" role="status"></p>
+          <section class="image-text-controls" aria-labelledby="image-text-title">
+            <h5 id="image-text-title">加字</h5>
+            <input id="image-text" type="text" placeholder="圖上的字">
+            <div class="image-text-selects">
+              <label>位置<select id="image-text-position"><option value="top">上</option><option value="middle">中</option><option value="bottom" selected>下</option></select></label>
+              <label>大小<select id="image-text-size"><option value="small">小</option><option value="medium" selected>中</option><option value="large">大</option></select></label>
+              <label>樣式<select id="image-text-style"><option value="light-brand">白底主色字</option><option value="dark-light">黑底白字</option><option value="light-shadow">白字陰影</option></select></label>
+            </div>
+          </section>
+          <section class="image-download" aria-label="下載圖片">
+            <label>下載尺寸<select id="download-size"></select></label>
+            <button class="secondary-button" id="download-image" type="button">⬇ 下載這張圖</button>
+          </section>
+        </section>
         <button class="build-button" id="build-prompt" type="button">🧩 組好指令</button>
         <button class="build-button save-post-button" id="write-with-ai" type="button">✨ 讓 AI 寫</button>
         <p class="save-status" id="ai-write-status" role="status"></p>
@@ -710,10 +801,6 @@
             <div class="phone-screen" id="phone-screen"></div>
           </div>
         </div>
-        <label class="image-upload" id="ig-image-upload-wrap" for="ig-image-upload">
-          IG 圖片
-          <input id="ig-image-upload" type="file" accept="image/*">
-        </label>
       </section>
     </div>
   </main>
@@ -802,6 +889,27 @@
           </select>
         </div>
       </div>
+      <div class="ai-settings-group">
+        <h3>生圖</h3>
+        <div class="modal-field">
+          <label for="settings-image-spec">圖片規格</label>
+          <textarea id="settings-image-spec"></textarea>
+        </div>
+        <div class="modal-field">
+          <label for="settings-image-model">生圖模型</label>
+          <select id="settings-image-model">
+            <option value="bytedance-seed/seedream-5-0-flash">bytedance-seed/seedream-5-0-flash</option>
+            <option value="qwen/qwen-image-2.1-turbo">qwen/qwen-image-2.1-turbo</option>
+            <option value="qwen/qwen-image-3">qwen/qwen-image-3</option>
+            <option value="bytedance-seed/seedream-5-0-pro">bytedance-seed/seedream-5-0-pro</option>
+            <option value="google/gemini-3.1-flash-lite-image">google/gemini-3.1-flash-lite-image</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label for="settings-image-custom-model">或自己打生圖模型名稱</label>
+          <input id="settings-image-custom-model" type="text" autocomplete="off">
+        </div>
+      </div>
       <div class="modal-field">
         <label for="settings-ai-order">先用哪一組</label>
         <select id="settings-ai-order">
@@ -869,6 +977,21 @@
   <script>
     const AI_MODEL = "deepseek/deepseek-v4.1-flash";
     const GEMINI_MODEL = "gemini-3.8-flash";
+    const IMAGE_MODEL = "bytedance-seed/seedream-5-0-flash";
+    const PIC_SIZE = {
+      FB: [1080, 1080],
+      IG: [1080, 1350],
+      LINE: [1040, 1040],
+      Threads: [1080, 1350]
+    };
+    const SIZES = {
+      platform: { name: "跟著平台", platform: true },
+      square: { name: "方形", width: 1080, height: 1080 },
+      portrait: { name: "直式", width: 1080, height: 1350 },
+      story: { name: "限動", width: 1080, height: 1920 },
+      lineAvatar: { name: "LINE大頭貼", width: 640, height: 640 },
+      lineBroadcast: { name: "LINE群發圖", width: 1040, height: 1040 }
+    };
 
     // 之後想調整品牌、平台或素材卡欄位，從這裡修改。
     const brand = {
@@ -918,10 +1041,14 @@
     let currentPostStatus = "草稿";
     let workingCopy = null;
     let savedPosts = [];
-    let igImageDataUrl = "";
+    let postImages = [];
+    let primaryImageId = "";
+    let imageTextSettings = { text: "", position: "bottom", size: "medium", style: "light-brand" };
+    let downloadSize = "platform";
     let aiConversations = {};
     let previousDrafts = null;
     let workingGeneration = 0;
+    let initialImageSource = null;
     try {
       const storedWorking = JSON.parse(localStorage.getItem(workingStorageKey) || "null");
       if (storedWorking && typeof storedWorking === "object" && !Array.isArray(storedWorking)) {
@@ -990,20 +1117,22 @@
           <span class="social-meta"><span class="social-account"></span><span class="social-time">剛剛</span></span></div>
         <p class="preview-copy" id="preview-copy"></p>
         <div class="preview-date" id="preview-date"></div>
-        <div class="preview-image fb-image is-placeholder">圖片預覽區</div>
+        <div class="preview-image fb-image is-placeholder" id="preview-image">圖片預覽區</div>
         <div class="fb-actions"><span>讚</span><span>留言</span><span>分享</span></div>`,
       IG: `<div class="phone-status" aria-hidden="true"></div>
         <div class="social-header"><span class="avatar" aria-hidden="true"></span><span class="social-account"></span></div>
-        <div class="preview-image is-placeholder" id="ig-preview-image">圖片預覽區</div>
+        <div class="ig-carousel"><div class="ig-carousel-track" id="ig-carousel-track"></div></div>
+        <div class="ig-carousel-dots" id="ig-carousel-dots" aria-label="圖片頁數"></div>
         <div class="social-actions" aria-hidden="true"><span>♡</span><span>💬</span><span>➤</span></div>
         <p class="preview-copy" id="preview-copy"></p>
         <div class="preview-date" id="preview-date"></div>`,
       LINE: `<div class="phone-status" aria-hidden="true"></div>
         <div class="line-chat-row"><span class="avatar" aria-hidden="true"></span>
-          <div class="line-bubble"><div id="preview-copy"></div><div class="preview-date" id="preview-date"></div></div></div>`,
+          <div class="line-content"><div class="line-image-bubble"><div class="preview-image line-image is-placeholder" id="preview-image">圖片預覽區</div></div>
+          <div class="line-bubble"><div id="preview-copy"></div><div class="preview-date" id="preview-date"></div></div></div></div>`,
       Threads: `<div class="phone-status" aria-hidden="true"></div>
         <div class="threads-post"><span class="avatar" aria-hidden="true"></span>
-          <div class="threads-body"><span class="social-account"></span><p class="preview-copy" id="preview-copy"></p>
+          <div class="threads-body"><span class="social-account"></span><div class="preview-image threads-image is-placeholder" id="preview-image">圖片預覽區</div><p class="preview-copy" id="preview-copy"></p>
             <div class="preview-date" id="preview-date"></div></div></div>`
     };
 
@@ -1024,14 +1153,180 @@
       date.hidden = !dateInput.value.trim();
     }
 
+    function primaryImage() {
+      return postImages.find((image) => image.id === primaryImageId) || postImages[0] || null;
+    }
+
+    function imagesWithPrimaryFirst() {
+      const selected = primaryImage();
+      return selected ? [selected, ...postImages.filter((image) => image.id !== selected.id)] : [];
+    }
+
+    function loadCanvasImage(dataUrl) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error("無法讀取主圖"));
+        image.src = dataUrl;
+      });
+    }
+
+    function roundedRect(context, x, y, width, height, radius) {
+      const corner = Math.min(radius, width / 2, height / 2);
+      context.beginPath();
+      context.moveTo(x + corner, y);
+      context.arcTo(x + width, y, x + width, y + height, corner);
+      context.arcTo(x + width, y + height, x, y + height, corner);
+      context.arcTo(x, y + height, x, y, corner);
+      context.arcTo(x, y, x + width, y, corner);
+      context.closePath();
+    }
+
+    function wrapCanvasText(context, text, maxWidth) {
+      const lines = [];
+      let line = "";
+      for (const character of Array.from(text)) {
+        const candidate = line + character;
+        if (line && context.measureText(candidate).width > maxWidth) {
+          lines.push(line);
+          line = character;
+        } else line = candidate;
+      }
+      if (line) lines.push(line);
+      if (lines.length <= 3) return lines;
+      const result = lines.slice(0, 3);
+      while (result[2] && context.measureText(`${result[2]}…`).width > maxWidth) result[2] = result[2].slice(0, -1);
+      result[2] = `${result[2]}…`;
+      return result;
+    }
+
+    async function renderImageForSize(imageData, width, height) {
+      if (!imageData) return null;
+      const source = await loadCanvasImage(imageData.dataUrl);
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d");
+      const scale = Math.max(width / source.naturalWidth, height / source.naturalHeight);
+      const drawWidth = source.naturalWidth * scale;
+      const drawHeight = source.naturalHeight * scale;
+      context.drawImage(source, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
+      const text = imageTextSettings.text.trim();
+      if (text) {
+        const ratios = { small: 0.052, medium: 0.072, large: 0.096 };
+        const fontSize = Math.round(Math.min(width, height) * (ratios[imageTextSettings.size] || ratios.medium));
+        const lineHeight = Math.round(fontSize * 1.28);
+        const margin = width * 0.08;
+        context.font = `700 ${fontSize}px "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif`;
+        context.textAlign = "center";
+        context.textBaseline = "alphabetic";
+        const lines = wrapCanvasText(context, text, width - margin * 2);
+        const widest = Math.max(...lines.map((line) => context.measureText(line).width));
+        const paddingX = fontSize * 0.42;
+        const paddingY = fontSize * 0.28;
+        const textHeight = lineHeight * lines.length;
+        const boxHeight = textHeight + paddingY * 2;
+        let boxY = margin;
+        if (imageTextSettings.position === "middle") boxY = (height - boxHeight) / 2;
+        if (imageTextSettings.position === "bottom") boxY = height - margin - boxHeight;
+        const boxWidth = Math.min(width - margin * 2, widest + paddingX * 2);
+        const boxX = (width - boxWidth) / 2;
+        if (imageTextSettings.style === "light-brand" || imageTextSettings.style === "dark-light") {
+          context.fillStyle = imageTextSettings.style === "light-brand" ? "rgba(255,255,255,.84)" : "rgba(0,0,0,.72)";
+          roundedRect(context, boxX, boxY, boxWidth, boxHeight, fontSize * 0.28);
+          context.fill();
+          context.fillStyle = imageTextSettings.style === "light-brand" ? "#d3783c" : "#ffffff";
+        } else {
+          context.fillStyle = "#ffffff";
+          context.shadowColor = "rgba(0,0,0,.68)";
+          context.shadowBlur = fontSize * 0.18;
+          context.shadowOffsetY = fontSize * 0.07;
+        }
+        const startY = boxY + paddingY + fontSize;
+        lines.forEach((line, index) => context.fillText(line, width / 2, startY + lineHeight * index));
+        context.shadowColor = "transparent";
+      }
+      return canvas.toDataURL("image/png");
+    }
+
+    let previewRenderVersion = 0;
+
+    function updateIgCarousel() {
+      const version = ++previewRenderVersion;
+      const track = document.getElementById("ig-carousel-track");
+      const dots = document.getElementById("ig-carousel-dots");
+      if (!track || !dots) return;
+      const images = imagesWithPrimaryFirst();
+      track.replaceChildren();
+      dots.replaceChildren();
+      const renderDots = (activeIndex) => {
+        [...dots.children].forEach((dot, index) => dot.classList.toggle("is-active", index === activeIndex));
+      };
+      if (!images.length) {
+        const slide = document.createElement("div");
+        slide.className = "ig-carousel-slide";
+        const placeholder = document.createElement("div");
+        placeholder.className = "preview-image ig-image is-placeholder";
+        placeholder.style.aspectRatio = `${PIC_SIZE.IG[0]} / ${PIC_SIZE.IG[1]}`;
+        placeholder.textContent = "圖片預覽區";
+        slide.append(placeholder);
+        track.append(slide);
+        return;
+      }
+      images.forEach((image, index) => {
+        const slide = document.createElement("div");
+        slide.className = "ig-carousel-slide";
+        const frame = document.createElement("div");
+        frame.className = "preview-image ig-image has-upload";
+        frame.style.aspectRatio = `${PIC_SIZE.IG[0]} / ${PIC_SIZE.IG[1]}`;
+        const picture = document.createElement("img");
+        picture.src = image.dataUrl;
+        picture.alt = index === 0 ? "主圖預覽" : `第 ${index + 1} 張圖片預覽`;
+        frame.append(picture);
+        slide.append(frame);
+        track.append(slide);
+        const dot = document.createElement("span");
+        dot.className = "ig-carousel-dot";
+        dot.setAttribute("aria-label", `第 ${index + 1} 張`);
+        dots.append(dot);
+      });
+      renderDots(0);
+      const [width, height] = PIC_SIZE.IG;
+      renderImageForSize(images[0], width, height).then((dataUrl) => {
+        if (version === previewRenderVersion && dataUrl) track.querySelector("img").src = dataUrl;
+      }).catch(() => {});
+      track.addEventListener("scroll", () => {
+        const index = Math.max(0, Math.min(images.length - 1, Math.round(track.scrollLeft / Math.max(track.clientWidth, 1))));
+        renderDots(index);
+      }, { passive: true });
+    }
+
     function updatePreviewImage() {
-      const image = document.getElementById("ig-preview-image");
+      if (activePlatform === "IG") {
+        updateIgCarousel();
+        return;
+      }
+      const image = document.getElementById("preview-image");
       if (!image) return;
-      const hasImage = Boolean(igImageDataUrl);
-      image.textContent = hasImage ? "" : "圖片預覽區";
+      const [width, height] = PIC_SIZE[activePlatform] || PIC_SIZE.IG;
+      image.style.aspectRatio = `${width} / ${height}`;
+      const selected = primaryImage();
+      const hasImage = Boolean(selected);
+      image.replaceChildren();
+      if (hasImage) {
+        const picture = document.createElement("img");
+        picture.src = selected.dataUrl;
+        picture.alt = "主圖預覽";
+        image.append(picture);
+        const version = ++previewRenderVersion;
+        renderImageForSize(selected, width, height).then((dataUrl) => {
+          if (version === previewRenderVersion && dataUrl && image.contains(picture)) picture.src = dataUrl;
+        }).catch(() => {});
+      } else {
+        image.textContent = "圖片預覽區";
+      }
       image.classList.toggle("is-placeholder", !hasImage);
       image.classList.toggle("has-upload", hasImage);
-      image.style.backgroundImage = hasImage ? `url("${igImageDataUrl}")` : "";
     }
 
     function updateCharacterCount() {
@@ -1044,8 +1339,78 @@
       characterCount.classList.toggle("is-over", isOver);
     }
 
+    const imageTextInput = document.getElementById("image-text");
+    const imageTextPositionInput = document.getElementById("image-text-position");
+    const imageTextSizeInput = document.getElementById("image-text-size");
+    const imageTextStyleInput = document.getElementById("image-text-style");
+    const downloadSizeInput = document.getElementById("download-size");
+
+    function syncImageTextControls() {
+      imageTextInput.value = imageTextSettings.text;
+      imageTextPositionInput.value = imageTextSettings.position;
+      imageTextSizeInput.value = imageTextSettings.size;
+      imageTextStyleInput.value = imageTextSettings.style;
+      downloadSizeInput.replaceChildren();
+      Object.entries(SIZES).forEach(([key, size]) => {
+        const option = document.createElement("option");
+        option.value = key;
+        if (size.platform) {
+          const [width, height] = PIC_SIZE[activePlatform] || PIC_SIZE.IG;
+          option.textContent = `${size.name}（${activePlatform} ${width}×${height}）`;
+        } else option.textContent = `${size.name} ${size.width}×${size.height}`;
+        option.selected = key === downloadSize;
+        downloadSizeInput.append(option);
+      });
+    }
+
+    function saveImageTextSettings() {
+      if (persistWorkingCopy()) updateStorageUsage();
+      else updateStorageUsage(true);
+    }
+
+    [imageTextInput, imageTextPositionInput, imageTextSizeInput, imageTextStyleInput].forEach((input) => {
+      input.addEventListener("input", () => {
+        imageTextSettings = {
+          text: imageTextInput.value,
+          position: imageTextPositionInput.value,
+          size: imageTextSizeInput.value,
+          style: imageTextStyleInput.value
+        };
+        updatePreviewImage();
+        saveImageTextSettings();
+      });
+    });
+    downloadSizeInput.addEventListener("change", () => {
+      downloadSize = downloadSizeInput.value;
+      saveImageTextSettings();
+    });
+
+    document.getElementById("download-image").addEventListener("click", async () => {
+      const image = primaryImage();
+      if (!image) {
+        imageGenerateStatus.classList.add("is-error");
+        imageGenerateStatus.textContent = "先選一張主圖。";
+        return;
+      }
+      const selectedSize = SIZES[downloadSize] || SIZES.platform;
+      const [width, height] = selectedSize.platform ? (PIC_SIZE[activePlatform] || PIC_SIZE.IG) : [selectedSize.width, selectedSize.height];
+      try {
+        const dataUrl = await renderImageForSize(image, width, height);
+        const link = document.createElement("a");
+        const sizeName = selectedSize.platform ? activePlatform : selectedSize.name;
+        const safeBrandName = brand.name.replace(/[\\/:*?"<>|]/g, "_");
+        link.href = dataUrl;
+        link.download = `${safeBrandName}_${sizeName}_${width}x${height}.png`;
+        link.click();
+      } catch {
+        imageGenerateStatus.classList.add("is-error");
+        imageGenerateStatus.textContent = "無法產生下載圖片。";
+      }
+    });
+
     function showPlatform(platform) {
       activePlatform = platform;
+      syncImageTextControls();
       postContent.value = typeof drafts[platform] === "string" ? drafts[platform] : "";
       updateCharacterCount();
       document.querySelectorAll("#platform-tabs .tab").forEach((button) => {
@@ -1053,7 +1418,6 @@
       });
 
       phoneScreen.className = platform === "LINE" ? "phone-screen line-screen" : "phone-screen";
-      document.getElementById("ig-image-upload-wrap").hidden = platform !== "IG";
       phoneScreen.innerHTML = previewTemplates[platform] || previewTemplates.IG;
       phoneScreen.querySelectorAll(".avatar").forEach((avatar) => {
         avatar.textContent = brand.name.charAt(0);
@@ -1122,9 +1486,15 @@
       if (workingCopy.previousDrafts && typeof workingCopy.previousDrafts === "object" && !Array.isArray(workingCopy.previousDrafts)) {
         previousDrafts = { ...workingCopy.previousDrafts };
       }
-      if (typeof workingCopy.igImageDataUrl === "string" && workingCopy.igImageDataUrl.startsWith("data:image/")) {
-        igImageDataUrl = workingCopy.igImageDataUrl;
+      initialImageSource = {
+        postImages: workingCopy.postImages,
+        primaryImageId: workingCopy.primaryImageId,
+        legacyImage: workingCopy.igImageDataUrl
+      };
+      if (workingCopy.imageTextSettings && typeof workingCopy.imageTextSettings === "object") {
+        imageTextSettings = { ...imageTextSettings, ...workingCopy.imageTextSettings };
       }
+      if (typeof workingCopy.downloadSize === "string" && SIZES[workingCopy.downloadSize]) downloadSize = workingCopy.downloadSize;
       if (platforms.includes(workingCopy.activePlatform)) activePlatform = workingCopy.activePlatform;
     }
 
@@ -1136,6 +1506,185 @@
       return fields;
     }
 
+    const imageDatabaseName = "studio-images";
+    const imageStoreName = "imgs";
+
+    function openImageDatabase() {
+      return new Promise((resolve, reject) => {
+        if (!globalThis.indexedDB) {
+          reject(new Error("這個瀏覽器不能使用圖片倉庫。"));
+          return;
+        }
+        const request = indexedDB.open(imageDatabaseName, 1);
+        request.onupgradeneeded = () => {
+          const database = request.result;
+          if (!database.objectStoreNames.contains(imageStoreName)) database.createObjectStore(imageStoreName);
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("無法開啟圖片倉庫。"));
+      });
+    }
+
+    function imageStoreRequest(mode, action) {
+      return openImageDatabase().then((database) => new Promise((resolve, reject) => {
+        const transaction = database.transaction(imageStoreName, mode);
+        const request = action(transaction.objectStore(imageStoreName));
+        let result;
+        transaction.oncomplete = () => { database.close(); resolve(result); };
+        transaction.onerror = () => { database.close(); reject(transaction.error || new Error("圖片倉庫操作失敗。")); };
+        transaction.onabort = () => { database.close(); reject(transaction.error || new Error("圖片倉庫操作失敗。")); };
+        if (!request) return;
+        request.onsuccess = () => { result = request.result; };
+        request.onerror = () => reject(request.error || new Error("圖片倉庫操作失敗。"));
+      }));
+    }
+
+    function saveImageToWarehouse(id, dataUrl) {
+      return imageStoreRequest("readwrite", (store) => store.put(dataUrl, id));
+    }
+
+    function readImageFromWarehouse(id) {
+      return imageStoreRequest("readonly", (store) => store.get(id));
+    }
+
+    function removeImageFromWarehouse(id) {
+      return imageStoreRequest("readwrite", (store) => store.delete(id));
+    }
+
+    function countImagesInWarehouse() {
+      return imageStoreRequest("readonly", (store) => store.count());
+    }
+
+    function readImageReferences(value, legacyImage) {
+      const references = [];
+      const seen = new Set();
+      const add = (id, dataUrl = "") => {
+        if (typeof id !== "string" || !id || seen.has(id)) return;
+        seen.add(id);
+        references.push({ id, dataUrl: typeof dataUrl === "string" && dataUrl.startsWith("data:image/") ? dataUrl : "" });
+      };
+      if (Array.isArray(value)) {
+        value.forEach((image) => {
+          if (typeof image === "string") add(image);
+          else if (image && typeof image === "object") {
+            const id = image.id === "legacy-image" && typeof image.dataUrl === "string"
+              ? `legacy-${globalThis.crypto?.randomUUID?.() || Date.now()}-${references.length}` : image.id;
+            add(id, image.dataUrl);
+          }
+        });
+      }
+      if (!references.length && typeof legacyImage === "string" && legacyImage.startsWith("data:image/")) {
+        add(`legacy-${globalThis.crypto?.randomUUID?.() || Date.now()}`, legacyImage);
+      }
+      return references;
+    }
+
+    async function hydratePostImages(value, primaryId, legacyImage) {
+      const references = readImageReferences(value, legacyImage);
+      const images = [];
+      let migrated = false;
+      for (const reference of references) {
+        let dataUrl = reference.dataUrl;
+        if (dataUrl) {
+          await saveImageToWarehouse(reference.id, dataUrl);
+          migrated = true;
+        } else dataUrl = await readImageFromWarehouse(reference.id);
+        if (typeof dataUrl === "string" && dataUrl.startsWith("data:image/")) images.push({ id: reference.id, dataUrl });
+      }
+      return {
+        images,
+        primaryImageId: images.some((image) => image.id === primaryId) ? primaryId : (images[0]?.id || ""),
+        migrated
+      };
+    }
+
+    function imageIdsForPost(post) {
+      return readImageReferences(post?.postImages, post?.igImageDataUrl).map((image) => image.id);
+    }
+
+    function imageIsStillReferenced(id) {
+      return postImages.some((image) => image.id === id) || savedPosts.some((post) => imageIdsForPost(post).includes(id));
+    }
+
+    async function removeImageIfUnused(id) {
+      if (!imageIsStillReferenced(id)) await removeImageFromWarehouse(id);
+    }
+
+    function localStorageMegabytes() {
+      let bytes = 0;
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        bytes += ((key?.length || 0) + (localStorage.getItem(key)?.length || 0)) * 2;
+      }
+      return bytes / (1024 * 1024);
+    }
+
+    async function updateStorageUsage(error = false) {
+      const usage = document.getElementById("storage-usage");
+      const imageUsage = document.getElementById("image-storage-usage");
+      usage.classList.toggle("is-error", error);
+      usage.textContent = error ? "⚠️ 抽屜滿了，剛剛的沒存到！" : `瀏覽器的抽屜：已用 ${localStorageMegabytes().toFixed(2)} MB`;
+      imageUsage.classList.remove("is-error");
+      try {
+        const [count, estimate] = await Promise.all([
+          countImagesInWarehouse(),
+          globalThis.navigator?.storage?.estimate?.() || Promise.resolve({ usage: 0 })
+        ]);
+        imageUsage.textContent = `圖片倉庫：${count} 張，這個網站約用 ${(Number(estimate?.usage) / (1024 * 1024) || 0).toFixed(2)} MB`;
+      } catch {
+        imageUsage.classList.add("is-error");
+        imageUsage.textContent = "圖片倉庫：無法讀取";
+      }
+    }
+
+    function renderPostImages() {
+      const thumbnails = document.getElementById("image-thumbnails");
+      thumbnails.replaceChildren();
+      postImages.forEach((image) => {
+        const thumbnail = document.createElement("div");
+        thumbnail.tabIndex = 0;
+        thumbnail.setAttribute("role", "button");
+        thumbnail.className = "image-thumbnail";
+        thumbnail.classList.toggle("is-primary", image.id === primaryImageId);
+        thumbnail.setAttribute("aria-label", "設為主圖");
+        const picture = document.createElement("img");
+        picture.src = image.dataUrl;
+        picture.alt = "這篇的圖片";
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "image-remove";
+        remove.setAttribute("aria-label", "刪除這張圖");
+        remove.textContent = "×";
+        remove.addEventListener("click", async (event) => {
+          event.stopPropagation();
+          postImages = postImages.filter((item) => item.id !== image.id);
+          if (primaryImageId === image.id) primaryImageId = postImages[0]?.id || "";
+          renderPostImages();
+          updatePreviewImage();
+          if (persistWorkingCopy()) {
+            try { await removeImageIfUnused(image.id); }
+            catch { savePostStatus.textContent = "圖片倉庫暫時無法刪除這張圖。"; }
+            updateStorageUsage();
+          } else updateStorageUsage(true);
+        });
+        thumbnail.addEventListener("click", () => {
+          primaryImageId = image.id;
+          renderPostImages();
+          updatePreviewImage();
+          if (persistWorkingCopy()) updateStorageUsage();
+          else updateStorageUsage(true);
+        });
+        thumbnail.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            thumbnail.click();
+          }
+        });
+        thumbnail.append(picture, remove);
+        thumbnails.append(thumbnail);
+      });
+    }
+
     function persistWorkingCopy() {
       const working = {
         id: currentPostId,
@@ -1144,7 +1693,10 @@
         drafts: { ...drafts },
         aiConversations,
         previousDrafts,
-        igImageDataUrl,
+        postImages: postImages.map((image) => image.id),
+        primaryImageId,
+        imageTextSettings,
+        downloadSize,
         activePlatform
       };
       try {
@@ -1194,36 +1746,271 @@
       });
     });
 
-    const igImageUpload = document.getElementById("ig-image-upload");
-    igImageUpload.addEventListener("change", () => {
-      const file = igImageUpload.files && igImageUpload.files[0];
-      if (!file) return;
-      if (!file.type.startsWith("image/")) {
-        savePostStatus.textContent = "請選擇圖片檔案。";
-        igImageUpload.value = "";
-        return;
-      }
-      if (file.size > 1024 * 1024) {
-        savePostStatus.textContent = "圖片請小於 1 MB，才能保留在這個瀏覽器裡。";
-        igImageUpload.value = "";
-        return;
-      }
+    function compressImage(file) {
+      return new Promise((resolve, reject) => {
+        const source = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        source.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          const scale = Math.min(1, 1080 / Math.max(source.naturalWidth, source.naturalHeight));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(source.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(source.naturalHeight * scale));
+          canvas.getContext("2d").drawImage(source, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        source.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("無法讀取這張圖片")); };
+        source.src = objectUrl;
+      });
+    }
 
-      const reader = new FileReader();
-      reader.addEventListener("load", () => {
-        if (typeof reader.result !== "string" || !reader.result.startsWith("data:image/")) return;
-        igImageDataUrl = reader.result;
+    function compressDataUrl(dataUrl) {
+      return new Promise((resolve, reject) => {
+        const source = new Image();
+        source.onload = () => {
+          const scale = Math.min(1, 1080 / Math.max(source.naturalWidth, source.naturalHeight));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(source.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(source.naturalHeight * scale));
+          canvas.getContext("2d").drawImage(source, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        source.onerror = () => reject(new Error("無法讀取生好的圖片"));
+        source.src = dataUrl;
+      });
+    }
+
+    function imageAspectRatio(platform) {
+      const [width, height] = PIC_SIZE[platform] || PIC_SIZE.IG;
+      const gcd = (a, b) => b ? gcd(b, a % b) : a;
+      const divisor = gcd(width, height);
+      return `${width / divisor}:${height / divisor}`;
+    }
+
+    function imageApiError(status) {
+      return {
+        400: "這個模型不接受這個要求，換一個生圖模型試試",
+        401: "金鑰不對",
+        402: "全班的額度用完了",
+        404: "生圖模型名稱打錯了",
+        429: "太多人同時在用",
+        502: "這張沒畫完（沒有扣錢），再按一次"
+      }[status] || `服務出錯（HTTP ${status}）`;
+    }
+
+    const generateImageButton = document.getElementById("generate-image");
+    const planAndGenerateImageButton = document.getElementById("plan-and-generate-image");
+    const imageCountInput = document.getElementById("image-count");
+    const imageDescriptionInput = document.getElementById("image-description");
+    const imageGenerateStatus = document.getElementById("image-generate-status");
+    let imageGenerationBusy = false;
+
+    function setImageGenerationBusy(busy, label = "🎨 生圖") {
+      imageGenerationBusy = busy;
+      generateImageButton.disabled = busy;
+      planAndGenerateImageButton.disabled = busy;
+      imageCountInput.disabled = busy;
+      generateImageButton.textContent = label;
+    }
+
+    async function generateImageFromPrompt(prompt) {
+      if (!settings.aiKey) {
+        throw new Error("生圖要用第一組 OpenRouter 的金鑰（Gemini 的免費金鑰不能生圖）。先用 📤 上傳。");
+      }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 120000);
+      try {
+        const response = await fetch("https://openrouter.ai/api/v1/images", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${settings.aiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: settings.imageCustomModel || settings.imageModel,
+            prompt,
+            aspect_ratio: imageAspectRatio(activePlatform),
+            resolution: "1K",
+            n: 1
+          }),
+          signal: controller.signal
+        });
+        let data = null;
+        try { data = await response.json(); } catch { /* 下方用狀態碼顯示錯誤。 */ }
+        if (!response.ok) throw new Error(imageApiError(response.status));
+        const imageData = data?.data?.[0];
+        if (!imageData?.b64_json || !imageData?.media_type) throw new Error("回覆格式有問題");
+        const jpegDataUrl = await compressDataUrl(`data:${imageData.media_type};base64,${imageData.b64_json}`);
+        const image = { id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`, dataUrl: jpegDataUrl };
+        try { await saveImageToWarehouse(image.id, image.dataUrl); }
+        catch { throw new Error("圖片倉庫暫時無法存入圖片。"); }
+        postImages.push(image);
+        primaryImageId = image.id;
+        const cost = Number(data?.usage?.cost);
+        const today = addImageUsage(cost);
+        if (!persistWorkingCopy()) {
+          postImages = postImages.filter((item) => item.id !== image.id);
+          primaryImageId = postImages.at(-1)?.id || "";
+          await removeImageIfUnused(image.id).catch(() => {});
+          renderPostImages();
+          updatePreviewImage();
+          updateStorageUsage(true);
+          throw new Error("⚠️ 抽屜滿了，剛剛的沒存到！");
+        }
+        renderPostImages();
         updatePreviewImage();
-        persistWorkingCopy();
-        savePostStatus.textContent = "IG 圖片已加入預覽。";
-      });
-      reader.addEventListener("error", () => {
-        savePostStatus.textContent = "無法讀取這張圖片，請再試一次。";
-      });
-      reader.readAsDataURL(file);
+        updateStorageUsage();
+        const costText = Number.isFinite(cost) ? formatAiCost(cost) : "$—";
+        return { cost, costText, today };
+      } catch (error) {
+        if (controller.signal.aborted || error.name === "AbortError") throw new Error("等太久");
+        if (error instanceof TypeError) throw new Error("連不到");
+        throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
+    async function generateImagesFromPrompt(prompt, count) {
+      const results = [];
+      let totalCost = 0;
+      let hasCost = false;
+      try {
+        for (let index = 0; index < count; index += 1) {
+          const result = await generateImageFromPrompt(prompt);
+          results.push(result);
+          if (Number.isFinite(result.cost)) {
+            totalCost += result.cost;
+            hasCost = true;
+          }
+        }
+      } catch (error) {
+        if (results.length) {
+          error.partialBatch = {
+            count: results.length,
+            totalCost,
+            hasCost,
+            today: results.at(-1).today
+          };
+        }
+        throw error;
+      }
+      return {
+        count: results.length,
+        totalCost,
+        hasCost,
+        today: results.at(-1).today
+      };
+    }
+
+    function formatImageBatchStatus(result) {
+      const cost = result.hasCost ? formatAiCost(result.totalCost) : "$—";
+      return `已生 ${result.count} 張，共約 ${cost}｜今天生了 ${result.today.count} 張 約 ${formatAiCost(result.today.cost)}`;
+    }
+
+    generateImageButton.addEventListener("click", async () => {
+      if (imageGenerationBusy) return;
+      const prompt = imageDescriptionInput.value.trim();
+      imageGenerateStatus.classList.remove("is-error");
+      if (!prompt) {
+        imageGenerateStatus.classList.add("is-error");
+        imageGenerateStatus.textContent = "先填圖片描述（要畫什麼）。";
+        return;
+      }
+      const count = Number(imageCountInput.value) || 1;
+      setImageGenerationBusy(true, "🎨 畫圖中…");
+      imageGenerateStatus.textContent = "畫圖中…";
+      try {
+        const result = await generateImagesFromPrompt(prompt, count);
+        imageGenerateStatus.textContent = formatImageBatchStatus(result);
+      } catch (error) {
+        imageGenerateStatus.classList.add("is-error");
+        const partial = error.partialBatch;
+        imageGenerateStatus.textContent = partial
+          ? `${formatImageBatchStatus(partial)}\n${error.message || "連不到"}`
+          : error.message || "連不到";
+      } finally {
+        setImageGenerationBusy(false);
+      }
     });
-    showPlatform(activePlatform);
-    updateUndoButton();
+
+    planAndGenerateImageButton.addEventListener("click", async () => {
+      if (imageGenerationBusy) return;
+      const post = (drafts[activePlatform] || "").trim();
+      imageGenerateStatus.classList.remove("is-error");
+      if (!post) {
+        imageGenerateStatus.classList.add("is-error");
+        imageGenerateStatus.textContent = "先讓 AI 寫貼文";
+        return;
+      }
+      const count = Number(imageCountInput.value) || 1;
+      setImageGenerationBusy(true, "🪄 想圖中…");
+      imageGenerateStatus.textContent = "想圖中…";
+      try {
+        const system = `你是【${brand.name}】的美術指導。使用者會給你一篇社群貼文，請你寫一段給 AI 畫圖用的畫面描述。只描述畫面：主角、場景、構圖、光線、顏色、氣氛，要具體到看得到。照圖片規格寫。畫面裡不要有任何文字、字母、數字、標誌。不要畫名人，不要畫別的品牌的 logo。素材卡和貼文裡沒有的東西，不要自己加進畫面。一律用台灣的繁體中文。只回一段 80～150 字的畫面描述，不要標題、不要解釋。`;
+        const user = `圖片規格：\n${settings.imageSpec || "未填"}\n\n素材卡：\n${formatMaterialCard()}\n\n目前平台：${activePlatform}\n貼文：\n${post}\n\n圖的比例：${imageAspectRatio(activePlatform)}`;
+        const thought = await askAI([{ role: "system", content: system }, { role: "user", content: user }], { maxTokens: 4000 });
+        imageDescriptionInput.value = thought.text;
+        imageGenerateStatus.textContent = `想圖：${formatAiUsage(thought.provider, thought.runUsage)}\n畫圖中…`;
+        setImageGenerationBusy(true, "🎨 畫圖中…");
+        const images = await generateImagesFromPrompt(`${thought.text}\n\n（畫面中不要出現任何文字、字母、數字或標誌。）`, count);
+        imageGenerateStatus.textContent = `想圖：${formatAiUsage(thought.provider, thought.runUsage)}\n畫圖：${formatImageBatchStatus(images)}`;
+      } catch (error) {
+        imageGenerateStatus.classList.add("is-error");
+        const partial = error.partialBatch;
+        imageGenerateStatus.textContent = partial
+          ? `已生 ${partial.count} 張，共約 ${partial.hasCost ? formatAiCost(partial.totalCost) : "$—"}\n${error.message || "連不到"}`
+          : error.message || "連不到";
+      } finally {
+        setImageGenerationBusy(false);
+      }
+    });
+
+    document.getElementById("post-images-upload").addEventListener("change", async (event) => {
+      const files = [...(event.target.files || [])];
+      event.target.value = "";
+      for (const file of files) {
+        if (!file.type.startsWith("image/")) continue;
+        try {
+          const dataUrl = await compressImage(file);
+          const image = { id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`, dataUrl };
+          await saveImageToWarehouse(image.id, image.dataUrl);
+          postImages.push(image);
+          if (!primaryImageId) primaryImageId = image.id;
+          if (!persistWorkingCopy()) {
+            postImages = postImages.filter((item) => item.id !== image.id);
+            if (primaryImageId === image.id) primaryImageId = postImages[0]?.id || "";
+            await removeImageIfUnused(image.id).catch(() => {});
+            updateStorageUsage(true);
+            break;
+          }
+        } catch (error) {
+          savePostStatus.textContent = error.message || "無法讀取這張圖片，請再試一次。";
+        }
+      }
+      renderPostImages();
+      updatePreviewImage();
+      if (!document.getElementById("storage-usage").classList.contains("is-error")) updateStorageUsage();
+    });
+    async function initializeImageWarehouse() {
+      if (initialImageSource) {
+        try {
+          const hydrated = await hydratePostImages(
+            initialImageSource.postImages,
+            initialImageSource.primaryImageId,
+            initialImageSource.legacyImage
+          );
+          postImages = hydrated.images;
+          primaryImageId = hydrated.primaryImageId;
+          if (hydrated.migrated) persistWorkingCopy();
+        } catch {
+          savePostStatus.textContent = "圖片倉庫暫時無法讀取，這篇的圖片沒有顯示。";
+        }
+      }
+      showPlatform(activePlatform);
+      renderPostImages();
+      updateStorageUsage();
+      updateUndoButton();
+    }
+
+    initializeImageWarehouse();
 
     function taipeiDate(date) {
       const parts = new Intl.DateTimeFormat("zh-TW", {
@@ -1243,10 +2030,12 @@
     }
 
     const savePostStatus = document.getElementById("save-post-status");
-    document.getElementById("save-post").addEventListener("click", () => {
+    document.getElementById("save-post").addEventListener("click", async () => {
       const now = new Date();
       const firstField = document.getElementById(materialFields[0].id).value.trim() || "未填";
       const id = currentPostId || globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const previousPost = savedPosts.find((item) => item.id === id);
+      const previousImageIds = imageIdsForPost(previousPost);
       const post = {
         id,
         status: currentPostStatus,
@@ -1256,7 +2045,10 @@
         drafts: { ...drafts },
         aiConversations: readAiConversations(aiConversations),
         previousDrafts: previousDrafts && { ...previousDrafts },
-        igImageDataUrl
+        postImages: postImages.map((image) => image.id),
+        primaryImageId,
+        imageTextSettings,
+        downloadSize
       };
       const nextPosts = [...savedPosts.filter((item) => item.id !== id), post];
       try {
@@ -1264,6 +2056,8 @@
         savedPosts = nextPosts;
         currentPostId = id;
         persistWorkingCopy();
+        await Promise.all(previousImageIds.map((imageId) => removeImageIfUnused(imageId).catch(() => {})));
+        updateStorageUsage();
         savePostStatus.textContent = "已存檔。";
       } catch {
         savePostStatus.textContent = "存檔失敗，請檢查瀏覽器儲存設定。";
@@ -1274,7 +2068,27 @@
     const savedPostsList = document.getElementById("saved-posts-list");
     const postsStatus = document.getElementById("posts-status");
 
-    function openSavedPost(post) {
+    function persistSavedImageReferences(postId) {
+      const nextPosts = savedPosts.map((item) => {
+        if (item.id !== postId) return item;
+        const updated = {
+          ...item,
+          postImages: postImages.map((image) => image.id),
+          primaryImageId
+        };
+        delete updated.igImageDataUrl;
+        return updated;
+      });
+      try {
+        localStorage.setItem(savedPostsStorageKey, JSON.stringify(nextPosts));
+        savedPosts = nextPosts;
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    async function openSavedPost(post) {
       workingGeneration += 1;
       currentPostId = post.id;
       currentPostStatus = normalizePostStatus(post.status);
@@ -1289,13 +2103,29 @@
         ? { ...post.previousDrafts } : null;
       updateUndoButton();
       aiHelperStatus.textContent = "";
-      igImageDataUrl = typeof post.igImageDataUrl === "string" && post.igImageDataUrl.startsWith("data:image/")
-        ? post.igImageDataUrl : "";
+      let imageNotice = "";
+      try {
+        const hydrated = await hydratePostImages(post.postImages, post.primaryImageId, post.igImageDataUrl);
+        postImages = hydrated.images;
+        primaryImageId = hydrated.primaryImageId;
+        if (hydrated.migrated || (Array.isArray(post.postImages) && post.postImages.some((image) => typeof image !== "string")) || post.igImageDataUrl) {
+          persistSavedImageReferences(post.id);
+        }
+      } catch {
+        postImages = [];
+        primaryImageId = "";
+        imageNotice = "圖片倉庫暫時無法讀取，這篇的圖片沒有顯示。";
+      }
+      imageTextSettings = post.imageTextSettings && typeof post.imageTextSettings === "object"
+        ? { ...imageTextSettings, ...post.imageTextSettings } : { text: "", position: "bottom", size: "medium", style: "light-brand" };
+      downloadSize = typeof post.downloadSize === "string" && SIZES[post.downloadSize] ? post.downloadSize : "platform";
       activePlatform = platforms[0] || "IG";
       showPlatform(activePlatform);
+      renderPostImages();
+      updateStorageUsage();
       saveDrafts();
       persistWorkingCopy();
-      savePostStatus.textContent = `已打開「${post.title}」。`;
+      savePostStatus.textContent = imageNotice || `已打開「${post.title}」。`;
       postsDialog.close();
     }
 
@@ -1385,8 +2215,9 @@
         deleteButton.className = "secondary-button";
         deleteButton.type = "button";
         deleteButton.textContent = "刪除";
-        deleteButton.addEventListener("click", () => {
+        deleteButton.addEventListener("click", async () => {
           if (!window.confirm("確定嗎？")) return;
+          const removedImageIds = imageIdsForPost(post);
           const remaining = savedPosts.filter((item) => item.id !== post.id);
           try {
             localStorage.setItem(savedPostsStorageKey, JSON.stringify(remaining));
@@ -1396,6 +2227,8 @@
               currentPostStatus = postStatuses[0];
               persistWorkingCopy();
             }
+            await Promise.all(removedImageIds.map((imageId) => removeImageIfUnused(imageId).catch(() => {})));
+            updateStorageUsage();
             postsStatus.textContent = "已刪除。";
             renderSavedPosts();
           } catch {
@@ -1427,10 +2260,15 @@
       previousDrafts = null;
       updateUndoButton();
       aiHelperStatus.textContent = "";
-      igImageDataUrl = "";
-      document.getElementById("ig-image-upload").value = "";
+      postImages = [];
+      primaryImageId = "";
+      imageTextSettings = { text: "", position: "bottom", size: "medium", style: "light-brand" };
+      downloadSize = "platform";
+      document.getElementById("post-images-upload").value = "";
       activePlatform = platforms[0] || "IG";
       showPlatform(activePlatform);
+      renderPostImages();
+      updateStorageUsage();
       saveDrafts();
       persistWorkingCopy();
       savePostStatus.textContent = "已開始新的一篇。";
@@ -1440,7 +2278,8 @@
     let settings = {
       brandSpec: defaultBrandSpec, checklist: defaultChecklist, aiKey: "",
       openRouterModel: AI_MODEL, openRouterCustomModel: "", reasoning: "low",
-      geminiKey: "", geminiModel: GEMINI_MODEL, aiOrder: "openrouter-then-gemini"
+      geminiKey: "", geminiModel: GEMINI_MODEL, aiOrder: "openrouter-then-gemini",
+      imageModel: IMAGE_MODEL, imageCustomModel: "", imageSpec: ""
     };
     try {
       const storedSettings = JSON.parse(localStorage.getItem(settingsKey) || "null");
@@ -1454,6 +2293,9 @@
         if (typeof storedSettings.geminiKey === "string") settings.geminiKey = storedSettings.geminiKey;
         if (typeof storedSettings.geminiModel === "string") settings.geminiModel = storedSettings.geminiModel;
         if (typeof storedSettings.aiOrder === "string") settings.aiOrder = storedSettings.aiOrder;
+        if (typeof storedSettings.imageModel === "string") settings.imageModel = storedSettings.imageModel;
+        if (typeof storedSettings.imageCustomModel === "string") settings.imageCustomModel = storedSettings.imageCustomModel;
+        if (typeof storedSettings.imageSpec === "string") settings.imageSpec = storedSettings.imageSpec;
       }
     } catch { /* 無法讀取時使用檔案內建的初始內容。 */ }
 
@@ -1465,6 +2307,9 @@
     const reasoningInput = document.getElementById("settings-reasoning");
     const geminiKeyInput = document.getElementById("settings-gemini-key");
     const geminiModelInput = document.getElementById("settings-gemini-model");
+    const imageModelInput = document.getElementById("settings-image-model");
+    const imageCustomModelInput = document.getElementById("settings-image-custom-model");
+    const imageSpecInput = document.getElementById("settings-image-spec");
     const aiOrderInput = document.getElementById("settings-ai-order");
     const checklistInput = document.getElementById("settings-checklist");
     const settingsStatus = document.getElementById("settings-status");
@@ -1479,6 +2324,10 @@
       geminiKeyInput.value = settings.geminiKey;
       geminiModelInput.value = settings.geminiModel;
       if (!geminiModelInput.value) geminiModelInput.value = GEMINI_MODEL;
+      imageModelInput.value = settings.imageModel;
+      if (!imageModelInput.value) imageModelInput.value = IMAGE_MODEL;
+      imageCustomModelInput.value = settings.imageCustomModel;
+      imageSpecInput.value = settings.imageSpec;
       aiOrderInput.value = settings.aiOrder;
       if (!aiOrderInput.value) aiOrderInput.value = "openrouter-then-gemini";
       checklistInput.value = settings.checklist;
@@ -1492,7 +2341,8 @@
         aiKey: aiKeyInput.value.trim(), openRouterModel: openRouterModelInput.value,
         openRouterCustomModel: openRouterCustomModelInput.value.trim(), reasoning: reasoningInput.value,
         geminiKey: geminiKeyInput.value.trim(), geminiModel: geminiModelInput.value,
-        aiOrder: aiOrderInput.value
+        aiOrder: aiOrderInput.value, imageModel: imageModelInput.value,
+        imageCustomModel: imageCustomModelInput.value.trim(), imageSpec: imageSpecInput.value
       };
       try {
         localStorage.setItem(settingsKey, JSON.stringify(settings));
@@ -1623,7 +2473,7 @@
     }
 
     function freshDailyUsage() {
-      return { date: todayKey(), openrouter: { calls: 0, cost: 0 }, gemini: { calls: 0, cost: 0 } };
+      return { date: todayKey(), openrouter: { calls: 0, cost: 0 }, gemini: { calls: 0, cost: 0 }, image: { count: 0, cost: 0 } };
     }
 
     let dailyAiUsage = freshDailyUsage();
@@ -1634,6 +2484,8 @@
           dailyAiUsage[provider].calls = Number.isFinite(stored[provider].calls) ? stored[provider].calls : 0;
           dailyAiUsage[provider].cost = Number.isFinite(stored[provider].cost) ? stored[provider].cost : 0;
         }
+        dailyAiUsage.image.count = Number.isFinite(stored.image?.count) ? stored.image.count : 0;
+        dailyAiUsage.image.cost = Number.isFinite(stored.image?.cost) ? stored.image.cost : 0;
       }
     } catch { /* 無法讀取時從今天重新計算。 */ }
 
@@ -1682,6 +2534,14 @@
       return `這次用 ${providerNames[provider]}：${tokens} tokens 約 ${cost}｜${formatDailyAiUsage()}`;
     }
 
+    function addImageUsage(cost) {
+      const imageUsage = currentDailyUsage().image;
+      imageUsage.count += 1;
+      if (Number.isFinite(cost)) imageUsage.cost += cost;
+      saveDailyUsage();
+      return imageUsage;
+    }
+
     function aiFailure(provider, reason, raw = "") {
       const error = new Error(reason);
       error.provider = provider;
@@ -1704,14 +2564,14 @@
         || `服務出錯（HTTP ${status}）`;
     }
 
-    function providerRequest(provider, messages, retryForLength = false) {
+    function providerRequest(provider, messages, maxTokens, retryForLength = false) {
       if (provider === "openrouter") {
         return {
           url: "https://openrouter.ai/api/v1/chat/completions",
           key: settings.aiKey,
           body: {
             model: settings.openRouterCustomModel || settings.openRouterModel,
-            messages, max_tokens: 4000,
+            messages, max_tokens: maxTokens,
             reasoning: retryForLength
               ? { enabled: false, exclude: true }
               : { effort: settings.reasoning, exclude: true },
@@ -1726,8 +2586,8 @@
       };
     }
 
-    async function requestAiReply(provider, messages, runUsage, retryForLength = false) {
-      const request = providerRequest(provider, messages, retryForLength);
+    async function requestAiReply(provider, messages, runUsage, maxTokens, retryForLength = false) {
+      const request = providerRequest(provider, messages, maxTokens, retryForLength);
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 60000);
       addAiCall(provider);
@@ -1793,6 +2653,7 @@
         gemini: { tokens: 0, hasTokens: false, cost: 0, hasCost: false }
       };
       const failures = [];
+      const maxTokens = options.maxTokens || 4000;
       for (const provider of order) {
         const key = provider === "openrouter" ? settings.aiKey : settings.geminiKey;
         if (!key) {
@@ -1803,12 +2664,12 @@
         try {
           let result;
           try {
-            result = await requestAiReply(provider, messages, runUsage);
+            result = await requestAiReply(provider, messages, runUsage, maxTokens);
           } catch (error) {
             if (provider !== "openrouter" || error.code !== "empty_length") throw error;
             options.onProgress?.("OpenRouter 沒有產生文字，正在關閉思考後重試（會增加一次 API 呼叫）…");
             try {
-              result = await requestAiReply(provider, messages, runUsage, true);
+              result = await requestAiReply(provider, messages, runUsage, maxTokens, true);
             } catch (retryError) {
               if (retryError.code === "empty_length" || /HTTP 400/.test(retryError.message)) {
                 throw aiFailure(provider, "關閉思考後仍無法產生文字（可在 ⚙ 設定更換模型）");
@@ -1823,7 +2684,7 @@
               ...messages,
               { role: "assistant", content: result.text },
               { role: "user", content: options.correction }
-            ], runUsage);
+            ], runUsage, maxTokens);
             issue = options.validate(result.text);
             if (issue?.raw) unsplitRaw = issue.raw;
           }
@@ -1862,6 +2723,7 @@
       try {
         const prompt = assemblePrompt();
         const result = await askAI([{ role: "user", content: prompt }], {
+          maxTokens: 8000,
           validate: postReplyIssue,
           correction: "請依照原本的品牌規格與規則完成寫作，只輸出規格允許的平台標題及可直接發布的完整貼文；如果只允許 IG，就只輸出【IG】，不要輸出 FB 或 LINE。待確認事項另列【要問我的】。不要輸出檢查清單、✅ 或 ❌。",
           onProgress: (message) => { if (requestGeneration === workingGeneration) aiWriteStatus.textContent = message; }
@@ -1933,6 +2795,7 @@
       aiHelperStatus.textContent = "AI 修改中…";
       try {
         const result = await askAI(messages, {
+          maxTokens: 4000,
           onProgress: (message) => { if (generation === workingGeneration) aiHelperStatus.textContent = message; }
         });
         if (generation !== workingGeneration) return;
@@ -2019,6 +2882,7 @@
       reviewStatus.textContent = "檢查中…";
       try {
         const result = await askAI(messages, {
+          maxTokens: 6000,
           onProgress: (message) => { if (generation === workingGeneration) reviewStatus.textContent = message; }
         });
         if (generation !== workingGeneration) {
