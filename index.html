@@ -65,6 +65,14 @@
     }
 
     .topbar-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .menu-cell { display: grid; grid-template-columns: 32px 70px 1fr 1fr 1fr; gap: 6px; align-items: center; }
+    .menu-cell input, .menu-cell select { width: 100%; min-width: 0; padding: 8px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+    .menu-preview { display: block; width: 100%; height: auto; border: 1px solid var(--line); }
+    .menu-error { color: #b42318; white-space: pre-wrap; }
+    .line-menu { margin-top: 16px; background: white; }
+    .line-menu-bar { padding: 6px; text-align: center; font-size: 10px; }
+    .line-menu canvas { display: block; width: 100%; height: auto; }
+    @media (max-width: 700px) { .menu-cell { grid-template-columns: 30px 65px 1fr; } .menu-cell select, .menu-cell input:last-child { grid-column: 2 / -1; } }
 
     .header-button {
       padding: 8px 14px;
@@ -687,6 +695,7 @@
       <p class="account" id="top-account"></p>
       <button class="header-button" id="open-posts" type="button">📁 我的貼文</button>
       <button class="header-button" id="new-post" type="button">＋ 新的一篇</button>
+      <button class="header-button" id="open-rich-menu" type="button">📋 圖文選單</button>
       <button class="header-button" id="open-settings" type="button">⚙ 設定</button>
     </div>
   </header>
@@ -804,6 +813,18 @@
       </section>
     </div>
   </main>
+
+  <dialog class="modal" id="rich-menu-dialog" aria-labelledby="rich-menu-title">
+    <div class="modal-header"><h2 id="rich-menu-title">📋 圖文選單</h2><button class="modal-close" id="close-rich-menu" type="button">關閉</button></div>
+    <div class="modal-body">
+      <div class="modal-field"><label for="menu-layout">版型</label><select id="menu-layout"></select></div>
+      <div class="modal-field"><label for="menu-background">底色</label><select id="menu-background"><option value="brand">品牌主色</option><option value="white">白色</option><option value="image">這篇的主圖加深一點</option></select></div>
+      <div class="modal-field"><label for="menu-bar-text">選單列的字</label><input id="menu-bar-text" maxlength="14" value="選單"></div>
+      <div id="menu-cells"></div><canvas id="menu-preview" class="menu-preview"></canvas>
+      <p id="menu-status" class="modal-status" role="status"></p>
+    </div>
+    <div class="modal-footer"><button class="secondary-button" id="copy-menu" type="button">📋 複製設定表</button><button class="primary-button" id="download-menu" type="button">⬇ 下載選單圖</button></div>
+  </dialog>
 
   <dialog class="modal" id="review-dialog" aria-labelledby="review-title">
     <div class="modal-header">
@@ -975,6 +996,14 @@
   </dialog>
 
   <script>
+    const MENUS = [
+      { id: "large6", name: "大型 6 格（上 3 下 3）", w: 2500, h: 1686, cols: 3, rows: 2 },
+      { id: "large4", name: "大型 4 格（上 2 下 2）", w: 2500, h: 1686, cols: 2, rows: 2 },
+      { id: "large1", name: "大型 1 格", w: 2500, h: 1686, cols: 1, rows: 1 },
+      { id: "small3", name: "小型 3 格（左中右）", w: 2500, h: 843, cols: 3, rows: 1 },
+      { id: "small2", name: "小型 2 格（左右）", w: 2500, h: 843, cols: 2, rows: 1 },
+      { id: "small1", name: "小型 1 格", w: 2500, h: 843, cols: 1, rows: 1 }
+    ];
     const AI_MODEL = "deepseek/deepseek-v4.1-flash";
     const GEMINI_MODEL = "gemini-3.8-flash";
     const IMAGE_MODEL = "bytedance-seed/seedream-5-0-flash";
@@ -1129,12 +1158,125 @@
       LINE: `<div class="phone-status" aria-hidden="true"></div>
         <div class="line-chat-row"><span class="avatar" aria-hidden="true"></span>
           <div class="line-content"><div class="line-image-bubble"><div class="preview-image line-image is-placeholder" id="preview-image">圖片預覽區</div></div>
-          <div class="line-bubble"><div id="preview-copy"></div><div class="preview-date" id="preview-date"></div></div></div></div>`,
+          <div class="line-bubble"><div id="preview-copy"></div><div class="preview-date" id="preview-date"></div></div></div></div><div class="line-menu"><div class="line-menu-bar" id="line-menu-bar"></div><canvas id="line-menu-canvas"></canvas></div>`,
       Threads: `<div class="phone-status" aria-hidden="true"></div>
         <div class="threads-post"><span class="avatar" aria-hidden="true"></span>
           <div class="threads-body"><span class="social-account"></span><div class="preview-image threads-image is-placeholder" id="preview-image">圖片預覽區</div><p class="preview-copy" id="preview-copy"></p>
             <div class="preview-date" id="preview-date"></div></div></div>`
     };
+
+    const menuStorageKey = `社群工作台：${brand.account}：圖文選單`;
+    let menuSettings = { layout: "large6", background: "brand", bar: "選單", cells: [] };
+    try { menuSettings = { ...menuSettings, ...JSON.parse(localStorage.getItem(menuStorageKey) || "{}") }; } catch {}
+    if (!Array.isArray(menuSettings.cells)) menuSettings.cells = [];
+    const menuDialog = document.getElementById("rich-menu-dialog");
+    const menuLayout = document.getElementById("menu-layout");
+    const menuBackground = document.getElementById("menu-background");
+    const menuBar = document.getElementById("menu-bar-text");
+    const menuCells = document.getElementById("menu-cells");
+    const menuStatus = document.getElementById("menu-status");
+    MENUS.forEach((menu) => menuLayout.add(new Option(menu.name, menu.id)));
+    const currentMenu = () => MENUS.find((menu) => menu.id === menuSettings.layout) || MENUS[0];
+    const defaultMenuCell = () => ({ icon: "", text: "", action: "none", content: "" });
+    function persistMenu() {
+      try { localStorage.setItem(menuStorageKey, JSON.stringify(menuSettings)); }
+      catch { menuStatus.className = "menu-error"; menuStatus.textContent = "無法儲存選單設定，請檢查瀏覽器儲存空間。"; }
+    }
+    function menuErrors() {
+      const cells = menuSettings.cells.slice(0, currentMenu().cols * currentMenu().rows);
+      const errors = [];
+      if (cells.every((cell) => cell.action === "none")) errors.push("至少要有一格設定動作。");
+      cells.forEach((cell, index) => {
+        const label = String.fromCharCode(65 + index);
+        if (!cell.text.trim() && !cell.icon.trim()) errors.push(`${label} 格沒有文字也沒有圖示。`);
+        if (cell.action === "url" && !/^https:\/\//i.test(cell.content.trim())) errors.push(`${label} 格網址必須以 https:// 開頭。`);
+      });
+      if (menuSettings.background === "image" && !primaryImage()) errors.push("這篇還沒有主圖，請先上傳或選擇主圖。");
+      return errors;
+    }
+    function renderMenuFields() {
+      const count = currentMenu().cols * currentMenu().rows;
+      while (menuSettings.cells.length < count) menuSettings.cells.push(defaultMenuCell());
+      menuCells.replaceChildren();
+      for (let index = 0; index < count; index++) {
+        const cell = menuSettings.cells[index] = { ...defaultMenuCell(), ...menuSettings.cells[index] };
+        const row = document.createElement("div"); row.className = "menu-cell";
+        const code = document.createElement("strong"); code.textContent = String.fromCharCode(65 + index); row.append(code);
+        const icon = document.createElement("input"); icon.placeholder = "圖示"; icon.setAttribute("aria-label", `${code.textContent} 圖示`); icon.value = cell.icon;
+        const label = document.createElement("input"); label.placeholder = "格子上的字"; label.maxLength = 12; label.value = cell.text;
+        const action = document.createElement("select"); [["text", "送出文字"], ["url", "開網址"], ["none", "不設定"]].forEach(([value, title]) => action.add(new Option(title, value))); action.value = cell.action;
+        const content = document.createElement("input"); content.placeholder = "內容（可留白）"; content.value = cell.content;
+        [[icon, "icon"], [label, "text"], [action, "action"], [content, "content"]].forEach(([element, key]) => {
+          element.addEventListener("input", () => { cell[key] = element.value; persistMenu(); updateRichMenuPreview(); }); row.append(element);
+        });
+        menuCells.append(row);
+      }
+    }
+    async function drawRichMenu(canvas, width) {
+      const menu = currentMenu(); const height = Math.round(width * menu.h / menu.w);
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext("2d"); const white = menuSettings.background === "white";
+      ctx.fillStyle = white ? "#fff" : "#d3783c"; ctx.fillRect(0, 0, width, height);
+      if (menuSettings.background === "image" && primaryImage()) {
+        const source = await loadCanvasImage(primaryImage().dataUrl);
+        const scale = Math.max(width / source.naturalWidth, height / source.naturalHeight);
+        const w = source.naturalWidth * scale, h = source.naturalHeight * scale;
+        ctx.drawImage(source, (width - w) / 2, (height - h) / 2, w, h);
+        ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.fillRect(0, 0, width, height);
+      }
+      const cw = width / menu.cols, ch = height / menu.rows;
+      ctx.strokeStyle = white ? "rgba(211,120,60,.45)" : "rgba(255,255,255,.55)"; ctx.lineWidth = Math.max(1, width / 1000);
+      for (let x = 1; x < menu.cols; x++) { ctx.beginPath(); ctx.moveTo(x * cw, 0); ctx.lineTo(x * cw, height); ctx.stroke(); }
+      for (let y = 1; y < menu.rows; y++) { ctx.beginPath(); ctx.moveTo(0, y * ch); ctx.lineTo(width, y * ch); ctx.stroke(); }
+      ctx.fillStyle = white ? "#d3783c" : "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      menuSettings.cells.slice(0, menu.cols * menu.rows).forEach((cell, index) => {
+        const x = (index % menu.cols + .5) * cw, y = (Math.floor(index / menu.cols) + .5) * ch;
+        const fontSize = Math.min(cw * .13, ch * .16); const iconSize = Math.min(cw * .22, ch * .28);
+        if (cell.icon.trim()) { ctx.font = `${iconSize}px sans-serif`; ctx.fillText(cell.icon, x, y - ch * .13, cw * .8); }
+        ctx.font = `700 ${fontSize}px "Noto Sans TC", "Microsoft JhengHei", sans-serif`;
+        let lines = [], line = "";
+        for (const char of Array.from(cell.text)) { if (line && ctx.measureText(line + char).width > cw * .8) { lines.push(line); line = char; } else line += char; }
+        if (line) lines.push(line); lines = lines.slice(0, 2);
+        const base = cell.icon.trim() ? y + ch * .15 : y;
+        lines.forEach((text, n) => ctx.fillText(text, x, base + (n - (lines.length - 1) / 2) * fontSize * 1.25, cw * .8));
+      });
+    }
+    let menuPreviewVersion = 0;
+    async function updateRichMenuPreview() {
+      const version = ++menuPreviewVersion; const canvas = document.createElement("canvas");
+      try {
+        await drawRichMenu(canvas, 600); if (version !== menuPreviewVersion) return;
+        [document.getElementById("menu-preview"), document.getElementById("line-menu-canvas")].filter(Boolean).forEach((target) => { target.width = canvas.width; target.height = canvas.height; target.getContext("2d").drawImage(canvas, 0, 0); });
+        const bar = document.getElementById("line-menu-bar"); if (bar) bar.textContent = `${menuSettings.bar || "選單"} ▾`;
+        const errors = menuErrors(); menuStatus.className = errors.length ? "menu-error" : "modal-status"; menuStatus.textContent = errors.join("\n");
+      } catch { menuStatus.className = "menu-error"; menuStatus.textContent = "無法繪製選單預覽。"; }
+    }
+    document.getElementById("open-rich-menu").addEventListener("click", () => { menuLayout.value = currentMenu().id; menuBackground.value = menuSettings.background; menuBar.value = menuSettings.bar; renderMenuFields(); updateRichMenuPreview(); menuDialog.showModal(); });
+    document.getElementById("close-rich-menu").addEventListener("click", () => menuDialog.close());
+    [[menuLayout, "layout"], [menuBackground, "background"], [menuBar, "bar"]].forEach(([element, key]) => element.addEventListener("input", () => { menuSettings[key] = element.value; if (key === "layout") renderMenuFields(); persistMenu(); updateRichMenuPreview(); }));
+    document.getElementById("download-menu").addEventListener("click", async () => {
+      const errors = menuErrors(); if (errors.length) { menuStatus.className = "menu-error"; menuStatus.textContent = errors.join("\n"); return; }
+      try {
+        const menu = currentMenu(), canvas = document.createElement("canvas"); await drawRichMenu(canvas, menu.w);
+        let blob; for (const quality of [.92, .85, .78, .7, .6, .5]) { blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality)); if (blob && blob.size <= 1000000) break; }
+        if (!blob || blob.size > 1000000) throw new Error("圖片超過 1 MB，請更換底圖再試。");
+        const url = URL.createObjectURL(blob), link = document.createElement("a"); link.href = url; link.download = `${brand.name.replace(/[\\/:*?\"<>|]/g, "_")}_圖文選單_${menu.w}x${menu.h}.jpg`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+        menuStatus.className = "modal-status"; menuStatus.textContent = `下載好了：${menu.w}×${menu.h}，${(blob.size / 1000000).toFixed(2)} MB`;
+      } catch (error) { menuStatus.className = "menu-error"; menuStatus.textContent = error.message || "下載失敗。"; }
+    });
+    document.getElementById("copy-menu").addEventListener("click", async () => {
+      const errors = menuErrors(); if (errors.length) { menuStatus.className = "menu-error"; menuStatus.textContent = errors.join("\n"); return; }
+      const menu = currentMenu();
+      const lines = menuSettings.cells.slice(0, menu.cols * menu.rows).map((cell, index) => {
+        const column = index % menu.cols, row = Math.floor(index / menu.cols);
+        const horizontal = menu.cols === 1 ? "中" : menu.cols === 2 ? ["左", "右"][column] : ["左", "中", "右"][column];
+        const position = menu.rows === 1 ? (menu.cols === 1 ? "中央" : horizontal) : horizontal + (row === 0 ? "上" : "下");
+        const action = cell.action === "none" ? "不設定" : cell.action === "url" ? `網址「${cell.content}」` : `文字「${cell.content || cell.text}」`;
+        return `${String.fromCharCode(65 + index)}（${position}）${cell.icon} ${cell.text} → ${action}`;
+      });
+      try { await navigator.clipboard.writeText([`版型：${menu.name}`, `選單列的字：${menuSettings.bar}`, ...lines].join("\n")); menuStatus.className = "modal-status"; menuStatus.textContent = "設定表已複製。"; }
+      catch { menuStatus.className = "menu-error"; menuStatus.textContent = "複製失敗，請檢查瀏覽器權限。"; }
+    });
 
     function saveDrafts() {
       try { localStorage.setItem(storageKey, JSON.stringify(drafts)); }
@@ -1427,6 +1569,7 @@
       });
       updatePreviewContent();
       updatePreviewImage();
+      if (platform === "LINE") updateRichMenuPreview();
       renderAiConversation();
     }
 
