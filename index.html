@@ -697,6 +697,7 @@
       <button class="header-button" id="new-post" type="button">＋ 新的一篇</button>
       <button class="header-button" id="open-rich-menu" type="button">📋 圖文選單</button>
       <button class="header-button" id="open-settings" type="button">⚙ 設定</button>
+      <button class="header-button" id="open-login" type="button">🔐 登入</button>
     </div>
   </header>
 
@@ -717,6 +718,7 @@
           <span class="panel-tag">素材</span>
         </div>
         <div id="material-fields"></div>
+        <div class="field"><label for="publish-date">📅 預計發佈日</label><input id="publish-date" type="date"></div>
         <section class="post-images" aria-labelledby="post-images-title">
           <div class="post-images-heading">
             <h4 id="post-images-title">🖼 這篇的圖</h4>
@@ -763,6 +765,7 @@
         <button class="build-button save-post-button" id="paste-ai-reply" type="button">📥 貼回 AI 寫好的</button>
         <button class="build-button save-post-button" id="save-post" type="button">💾 存檔</button>
         <p class="save-status" id="save-post-status" role="status"></p>
+        <p class="save-status" id="cloud-save-status" role="status"></p>
       </section>
 
       <section class="panel editor-panel" aria-labelledby="editor-title">
@@ -813,6 +816,16 @@
       </section>
     </div>
   </main>
+
+  <dialog class="modal" id="login-dialog" aria-labelledby="login-title">
+    <div class="modal-header"><h2 id="login-title">🔐 登入</h2><button class="modal-close" id="close-login" type="button">關閉</button></div>
+    <div class="modal-body">
+      <div class="modal-field"><label for="login-email">Email</label><input id="login-email" type="email" autocomplete="email"></div>
+      <div class="modal-field"><label for="login-password">密碼（至少 6 個字）</label><input id="login-password" type="password" minlength="6" autocomplete="current-password"></div>
+      <p class="modal-status" id="login-status" role="status"></p>
+    </div>
+    <div class="modal-footer"><button class="primary-button" id="login-submit" type="button">登入</button><button class="secondary-button" id="login-signup" type="button">第一次：註冊</button><button class="secondary-button" id="login-signout" type="button">登出</button></div>
+  </dialog>
 
   <dialog class="modal" id="rich-menu-dialog" aria-labelledby="rich-menu-title">
     <div class="modal-header"><h2 id="rich-menu-title">📋 圖文選單</h2><button class="modal-close" id="close-rich-menu" type="button">關閉</button></div>
@@ -952,6 +965,7 @@
       <button class="modal-close" id="close-posts" type="button">關閉</button>
     </div>
     <div class="modal-body">
+      <div><button class="secondary-button" id="upload-all-posts" type="button">⬆ 全部上傳到雲端</button> <button class="secondary-button" id="download-cloud-posts" type="button">⬇ 從雲端拿回來</button></div>
       <div class="saved-board" id="saved-posts-list"></div>
       <p class="modal-status" id="posts-status" role="status"></p>
     </div>
@@ -995,7 +1009,11 @@
     </div>
   </dialog>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    // 這兩個可以公開，守門的是 Supabase 的 RLS；sb_secret_ 開頭的絕對不要貼。
+    const SB_URL = 'https://iyiqrvmigwttpirjqbhu.supabase.co';
+    const SB_KEY = 'sb_publishable_ll9B5GbUqP30X6WX_ISrsw_1xp8eRZi';
     const MENUS = [
       { id: "large6", name: "大型 6 格（上 3 下 3）", w: 2500, h: 1686, cols: 3, rows: 2 },
       { id: "large4", name: "大型 4 格（上 2 下 2）", w: 2500, h: 1686, cols: 2, rows: 2 },
@@ -1027,6 +1045,66 @@
       name: "HelloMonady",
       account: "@hello_monday.tw"
     };
+
+    let sb = null;
+    let me = null;
+    let cloudReason = "";
+    if (!SB_URL.trim() || !SB_KEY.trim()) cloudReason = "尚未填入 Supabase 網址或金鑰";
+    else if (SB_KEY.trim().startsWith("sb_secret_")) cloudReason = "不可使用 sb_secret_ 金鑰";
+    else if (!window.supabase?.createClient) cloudReason = "登入程式庫載入失敗，請檢查網路";
+    else {
+      try { sb = window.supabase.createClient(SB_URL, SB_KEY); }
+      catch { cloudReason = "Supabase 網址或金鑰設定有誤"; }
+    }
+    const loginButton = document.getElementById("open-login");
+    const loginDialog = document.getElementById("login-dialog");
+    const loginEmail = document.getElementById("login-email");
+    const loginPassword = document.getElementById("login-password");
+    const loginStatus = document.getElementById("login-status");
+    function updateLoginState(user) {
+      me = user || null;
+      loginButton.textContent = me ? `☁ ${me.email || "我的帳號"}` : "🔐 登入";
+      setTimeout(() => handleCloudLogin(me), 0);
+    }
+    function loginError(error) {
+      const message = String(error?.message || "");
+      if (/invalid login credentials/i.test(message)) return "Email 或密碼不對";
+      if (/user already registered/i.test(message)) return "這個 Email 註冊過了，直接按「登入」";
+      if (/email not confirmed/i.test(message)) return "到 Supabase 把 Confirm email 關掉";
+      if (/rate limit|too many requests|over_email_send_rate_limit/i.test(message) || error?.status === 429) return "試太多次了，等 1 分鐘";
+      if (/password.*(short|least|characters)/i.test(message)) return "密碼至少 6 個字";
+      return "連線或登入失敗，請檢查網路與設定後再試。";
+    }
+    if (sb) {
+      sb.auth.onAuthStateChange((_event, session) => { updateLoginState(session?.user || null); });
+      sb.auth.getSession().then(({ data, error }) => { if (!error) updateLoginState(data.session?.user || null); }).catch(() => {});
+    }
+    loginButton.addEventListener("click", () => {
+      loginStatus.textContent = sb ? (me ? `已登入：${me.email || "我的帳號"}` : "") : `還沒接雲端：${cloudReason}`;
+      loginDialog.showModal();
+    });
+    document.getElementById("close-login").addEventListener("click", () => loginDialog.close());
+    async function authenticate(signup) {
+      if (!sb) { loginStatus.textContent = `還沒接雲端：${cloudReason}`; return; }
+      const email = loginEmail.value.trim(), password = loginPassword.value;
+      if (password.length < 6) { loginStatus.textContent = "密碼至少 6 個字"; return; }
+      if (!email || !loginEmail.validity.valid) { loginStatus.textContent = "請輸入正確的 Email。"; return; }
+      loginStatus.textContent = signup ? "註冊中…" : "登入中…";
+      try {
+        const { data, error } = signup ? await sb.auth.signUp({ email, password }) : await sb.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        if (signup && !data.session) loginStatus.textContent = "Supabase 的 Confirm email 還開著，關掉再按登入";
+        else { updateLoginState(data.user || data.session?.user); loginPassword.value = ""; loginStatus.textContent = signup ? "註冊並登入成功。" : "登入成功。"; }
+      } catch (error) { loginStatus.textContent = loginError(error); }
+    }
+    document.getElementById("login-submit").addEventListener("click", () => authenticate(false));
+    document.getElementById("login-signup").addEventListener("click", () => authenticate(true));
+    document.getElementById("login-signout").addEventListener("click", async () => {
+      if (!sb) { loginStatus.textContent = `還沒接雲端：${cloudReason}`; return; }
+      const clearLocal = window.confirm("要把這台電腦上的貼文也清掉嗎？借別人的電腦用，請按確定；自己的電腦按取消。");
+      try { const { error } = await sb.auth.signOut(); if (error) throw error; updateLoginState(null); if (clearLocal) await clearLocalPostData(); loginPassword.value = ""; loginStatus.textContent = "已登出。"; }
+      catch (error) { loginStatus.textContent = loginError(error); }
+    });
 
     const platforms = ["IG", "LINE", "FB"];
 
@@ -1067,6 +1145,7 @@
     } catch { /* 瀏覽器無法讀取時，仍可在這次開啟期間編輯。 */ }
 
     let currentPostId = null;
+    let cur = { publishDate: "" };
     let currentPostStatus = "草稿";
     let workingCopy = null;
     let savedPosts = [];
@@ -1614,6 +1693,8 @@
     });
 
     if (workingCopy) {
+      cur.publishDate = typeof workingCopy.publishDate === "string" ? workingCopy.publishDate : "";
+      document.getElementById("publish-date").value = cur.publishDate;
       currentPostId = typeof workingCopy.id === "string" ? workingCopy.id : null;
       currentPostStatus = normalizePostStatus(workingCopy.status);
       if (workingCopy.fields && typeof workingCopy.fields === "object") {
@@ -1833,6 +1914,7 @@
         id: currentPostId,
         status: currentPostStatus,
         fields: collectFields(),
+        publishDate: cur.publishDate,
         drafts: { ...drafts },
         aiConversations,
         previousDrafts,
@@ -1887,6 +1969,10 @@
         if (index === 0) updatePreviewContent();
         persistWorkingCopy();
       });
+    });
+    document.getElementById("publish-date").addEventListener("input", (event) => {
+      cur.publishDate = event.target.value;
+      persistWorkingCopy();
     });
 
     function compressImage(file) {
@@ -2173,6 +2259,7 @@
     }
 
     const savePostStatus = document.getElementById("save-post-status");
+    const cloudSaveStatus = document.getElementById("cloud-save-status");
     document.getElementById("save-post").addEventListener("click", async () => {
       const now = new Date();
       const firstField = document.getElementById(materialFields[0].id).value.trim() || "未填";
@@ -2183,7 +2270,8 @@
         id,
         status: currentPostStatus,
         title: `${taipeiDate(now)}｜${firstField}`,
-        savedAt: now.toISOString(),
+        savedAt: now.getTime(),
+        publishDate: cur.publishDate,
         fields: collectFields(),
         drafts: { ...drafts },
         aiConversations: readAiConversations(aiConversations),
@@ -2194,6 +2282,8 @@
         downloadSize
       };
       const nextPosts = [...savedPosts.filter((item) => item.id !== id), post];
+      cloudSaveStatus.textContent = "";
+      cloudSaveStatus.style.color = "";
       try {
         localStorage.setItem(savedPostsStorageKey, JSON.stringify(nextPosts));
         savedPosts = nextPosts;
@@ -2204,12 +2294,99 @@
         savePostStatus.textContent = "已存檔。";
       } catch {
         savePostStatus.textContent = "存檔失敗，請檢查瀏覽器儲存設定。";
+        return;
+      }
+      if (!sb || !me) {
+        cloudSaveStatus.textContent = "只存在這台電腦。🔐 登入以後，會同時存到雲端";
+        return;
+      }
+      try {
+        const { error } = await sb.from("posts").upsert({ id: String(post.id), user_id: me.id, data: post, publish_date: post.publishDate || null, updated_at: new Date().toISOString() }, { onConflict: "user_id,id" });
+        if (error) throw error;
+        if (cloudOwner === me?.id && cloudPostIds) cloudPostIds.add(String(post.id));
+        cloudSaveStatus.textContent = `☁ 雲端也存了：${post.title}`;
+      } catch (error) {
+        let reason = error?.message || "雲端連線失敗，請檢查網路";
+        if (["42P01", "PGRST205"].includes(error?.code)) reason = "雲端還沒有 posts 表，到 SQL Editor 貼建表那段按 Run";
+        else if (error?.code === "42501" || /row-level security/i.test(reason)) reason = "雲端不讓你存，SQL 的權限那段沒跑到";
+        cloudSaveStatus.style.color = "#b42318";
+        cloudSaveStatus.textContent = `${reason}。這台電腦有存到，不會不見`;
       }
     });
 
     const postsDialog = document.getElementById("posts-dialog");
     const savedPostsList = document.getElementById("saved-posts-list");
     const postsStatus = document.getElementById("posts-status");
+    let cloudPostIds = null;
+    let cloudOwner = null;
+    const autoFetchedUsers = new Set();
+    function cloudError(error) {
+      if (["42P01", "PGRST205"].includes(error?.code)) return "雲端還沒有 posts 表，到 SQL Editor 貼建表那段按 Run";
+      if (error?.code === "42501" || /row-level security/i.test(error?.message || "")) return "雲端不讓你存，SQL 的權限那段沒跑到";
+      return error?.message || "雲端連線失敗，請檢查網路";
+    }
+    function postTime(post) {
+      if (post.savedAt != null && post.savedAt !== "") {
+        const time = typeof post.savedAt === "number" ? post.savedAt : Date.parse(post.savedAt);
+        if (Number.isFinite(time)) return time;
+      }
+      const fallback = Number(post.id);
+      return Number.isFinite(fallback) ? fallback : 0;
+    }
+    async function handleCloudLogin(user) {
+      if (!user) { cloudOwner = null; cloudPostIds = null; if (postsDialog.open) renderSavedPosts(); return; }
+      if (cloudOwner !== user.id) { cloudOwner = user.id; cloudPostIds = null; }
+      if (autoFetchedUsers.has(user.id)) { if (postsDialog.open) renderSavedPosts(); return; }
+      autoFetchedUsers.add(user.id);
+      await fetchCloudPosts(user.id);
+    }
+    async function fetchCloudPosts(userId) {
+      if (!sb || !me) { postsStatus.textContent = "先 🔐 登入"; return; }
+      try {
+        const { data, error } = await sb.from("posts").select("data, updated_at");
+        if (error) throw error;
+        if (!me || me.id !== userId) return;
+        const ids = new Set(); const merged = new Map(savedPosts.map((post) => [String(post.id), post]));
+        let added = 0, updated = 0;
+        for (const row of data || []) {
+          const post = row.data;
+          if (!post || typeof post !== "object" || post.id == null) continue;
+          const id = String(post.id); ids.add(id);
+          const existing = merged.get(id);
+          if (!existing) { merged.set(id, { ...post, id }); added++; }
+          else if (postTime(post) > postTime(existing)) { merged.set(id, { ...post, id }); updated++; }
+        }
+        const next = [...merged.values()];
+        localStorage.setItem(savedPostsStorageKey, JSON.stringify(next));
+        savedPosts = next; cloudPostIds = ids;
+        postsStatus.textContent = `拿回來了：新增 ${added} 篇、更新 ${updated} 篇`;
+        renderSavedPosts();
+      } catch (error) { postsStatus.textContent = `拿回失敗：${cloudError(error)}`; }
+    }
+    document.getElementById("download-cloud-posts").addEventListener("click", () => fetchCloudPosts(me?.id));
+    document.getElementById("upload-all-posts").addEventListener("click", async () => {
+      if (!sb || !me) { postsStatus.textContent = "先 🔐 登入"; return; }
+      const userId = me.id, posts = [...savedPosts];
+      for (let index = 0; index < posts.length; index++) {
+        if (!me || me.id !== userId) { postsStatus.textContent = `第 ${index + 1} 篇上傳失敗：登入狀態已變更`; return; }
+        const post = posts[index];
+        try {
+          const { error } = await sb.from("posts").upsert({ id: String(post.id), user_id: userId, data: post, publish_date: post.publishDate || null, updated_at: new Date().toISOString() }, { onConflict: "user_id,id" });
+          if (error) throw error;
+          if (cloudPostIds) cloudPostIds.add(String(post.id));
+        } catch (error) { postsStatus.textContent = `第 ${index + 1} 篇上傳失敗：${cloudError(error)}`; renderSavedPosts(); return; }
+      }
+      postsStatus.textContent = `上傳好了：${posts.length} 篇`; renderSavedPosts();
+    });
+    async function clearLocalPostData() {
+      await imageStoreRequest("readwrite", (store) => store.clear());
+      localStorage.removeItem(savedPostsStorageKey);
+      localStorage.removeItem(storageKey);
+      localStorage.removeItem(workingStorageKey);
+      savedPosts = []; drafts = {}; postImages = []; primaryImageId = "";
+      document.getElementById("new-post").click();
+      updateStorageUsage();
+    }
 
     function persistSavedImageReferences(postId) {
       const nextPosts = savedPosts.map((item) => {
@@ -2233,6 +2410,8 @@
 
     async function openSavedPost(post) {
       workingGeneration += 1;
+      cur.publishDate = typeof post.publishDate === "string" ? post.publishDate : "";
+      document.getElementById("publish-date").value = cur.publishDate;
       currentPostId = post.id;
       currentPostStatus = normalizePostStatus(post.status);
       materialFields.forEach((field) => {
@@ -2299,7 +2478,7 @@
         return;
       }
 
-      const orderedPosts = [...savedPosts].sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+      const orderedPosts = [...savedPosts].sort((a, b) => postTime(b) - postTime(a) || String(b.id).localeCompare(String(a.id), undefined, { numeric: true }));
       postStatuses.forEach((status) => {
         const column = document.createElement("section");
         column.className = "board-column";
@@ -2330,9 +2509,10 @@
         const name = document.createElement("p");
         name.className = "saved-item-name";
         name.textContent = typeof post.title === "string" ? post.title : "未命名貼文";
+        if (me) { const tag = document.createElement("small"); tag.textContent = cloudPostIds ? (cloudPostIds.has(String(post.id)) ? " ☁ 雲端有" : " 只在這台") : " 雲端狀態未確認"; name.append(tag); }
         const time = document.createElement("p");
         time.className = "saved-item-time";
-        time.textContent = `存檔時間：${savedTimeLabel(post.savedAt)}`;
+        time.textContent = `存檔時間：${savedTimeLabel(post.savedAt)}${post.publishDate ? `｜📅 ${post.publishDate}` : ""}`;
         info.append(name, time);
 
         const statusSelect = document.createElement("select");
@@ -2359,7 +2539,11 @@
         deleteButton.type = "button";
         deleteButton.textContent = "刪除";
         deleteButton.addEventListener("click", async () => {
-          if (!window.confirm("確定嗎？")) return;
+          if (!window.confirm(me ? "確定刪除嗎？雲端的也會一起刪。" : "確定嗎？")) return;
+          if (sb && me) {
+            try { const { error } = await sb.from("posts").delete().eq("id", String(post.id)).eq("user_id", me.id); if (error) throw error; cloudPostIds?.delete(String(post.id)); }
+            catch (error) { postsStatus.textContent = `雲端刪除失敗：${cloudError(error)}；這台的貼文仍保留。`; return; }
+          }
           const removedImageIds = imageIdsForPost(post);
           const remaining = savedPosts.filter((item) => item.id !== post.id);
           try {
@@ -2395,6 +2579,8 @@
     document.getElementById("close-posts").addEventListener("click", () => postsDialog.close());
     document.getElementById("new-post").addEventListener("click", () => {
       workingGeneration += 1;
+      cur.publishDate = "";
+      document.getElementById("publish-date").value = "";
       currentPostId = null;
       currentPostStatus = postStatuses[0];
       materialFields.forEach((field) => { document.getElementById(field.id).value = ""; });
