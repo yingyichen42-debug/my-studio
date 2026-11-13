@@ -693,6 +693,7 @@
     <h1 id="page-title"></h1>
     <div class="topbar-actions">
       <p class="account" id="top-account"></p>
+      <small id="autosave-status" role="status"></small>
       <button class="header-button" id="open-posts" type="button">📁 我的貼文</button>
       <button class="header-button" id="new-post" type="button">＋ 新的一篇</button>
       <button class="header-button" id="open-rich-menu" type="button">📋 圖文選單</button>
@@ -1011,7 +1012,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // 這兩個可以公開，守門的是 Supabase 的 RLS；sb_secret_ 開頭的絕對不要貼。
+    // 僅使用可公開的金鑰，並設定 Supabase 的 RLS 權限。
     const SB_URL = 'https://iyiqrvmigwttpirjqbhu.supabase.co';
     const SB_KEY = 'sb_publishable_ll9B5GbUqP30X6WX_ISrsw_1xp8eRZi';
     const MENUS = [
@@ -1050,7 +1051,6 @@
     let me = null;
     let cloudReason = "";
     if (!SB_URL.trim() || !SB_KEY.trim()) cloudReason = "尚未填入 Supabase 網址或金鑰";
-    else if (SB_KEY.trim().startsWith("sb_secret_")) cloudReason = "不可使用 sb_secret_ 金鑰";
     else if (!window.supabase?.createClient) cloudReason = "登入程式庫載入失敗，請檢查網路";
     else {
       try { sb = window.supabase.createClient(SB_URL, SB_KEY); }
@@ -1897,6 +1897,21 @@
           if (persistWorkingCopy()) {
             try { await removeImageIfUnused(image.id); }
             catch { savePostStatus.textContent = "圖片倉庫暫時無法刪除這張圖。"; }
+            if (sb && me && image.url && !imageIsStillReferenced(image.id)) {
+              try {
+                const filename = decodeURIComponent(new URL(image.url).pathname.split("/").pop() || "");
+                if (!filename || filename.includes("/") || filename.includes("\\") || filename === "." || filename === "..") throw new Error("圖片網址的檔名無效");
+                const { error } = await sb.storage.from("images").remove([`${me.id}/${filename}`]);
+                if (error) throw error;
+              } catch (error) {
+                const message = error?.message || "";
+                let reason = "請檢查網路或雲端設定";
+                if (/bucket not found/i.test(message)) reason = "雲端還沒有 images 桶子";
+                else if (/row.level security|permission|unauthorized|forbidden/i.test(message) || error?.code === "42501" || error?.statusCode === "403") reason = "雲端不允許刪除圖片，請檢查圖片權限";
+                else if (message === "圖片網址的檔名無效") reason = message;
+                savePostStatus.textContent = `雲端圖片刪除失敗：${reason}；這台的縮圖已刪除。`;
+              }
+            }
             updateStorageUsage();
           } else updateStorageUsage(true);
         });
@@ -1918,6 +1933,32 @@
       });
     }
 
+    let autosaveTimer = null;
+    let autosaveSnapshot = "";
+    let autosaveReady = false;
+    let saveInProgress = false;
+    let autosavePending = false;
+    function relevantSnapshot() {
+      return JSON.stringify([collectFields(), cur.publishDate, drafts, postImages.map(({ id }) => id), primaryImageId, imageTextSettings, downloadSize]);
+    }
+    function scheduleAutosave() {
+      if (!autosaveReady) return;
+      const snapshot = relevantSnapshot();
+      if (snapshot === autosaveSnapshot) return;
+      autosaveSnapshot = snapshot;
+      autosavePending = true;
+      clearTimeout(autosaveTimer);
+      autosaveTimer = setTimeout(runAutosave, 5000);
+    }
+    async function runAutosave() {
+      if (!autosavePending) return;
+      if (saveInProgress || document.getElementById("write-with-ai").disabled || aiHelperBusy || imageGenerationBusy || document.getElementById("review-posts").disabled) {
+        autosaveTimer = setTimeout(runAutosave, 1000);
+        return;
+      }
+      autosavePending = false;
+      await savePost(true);
+    }
     function persistWorkingCopy() {
       const working = {
         id: currentPostId,
@@ -1935,6 +1976,7 @@
       };
       try {
         localStorage.setItem(workingStorageKey, JSON.stringify(working));
+        scheduleAutosave();
         return true;
       } catch {
         document.getElementById("save-post-status").textContent = "無法自動暫存，請檢查瀏覽器儲存設定。";
@@ -2246,6 +2288,8 @@
       renderPostImages();
       updateStorageUsage();
       updateUndoButton();
+      autosaveSnapshot = relevantSnapshot();
+      autosaveReady = true;
     }
 
     initializeImageWarehouse();
@@ -2269,7 +2313,13 @@
 
     const savePostStatus = document.getElementById("save-post-status");
     const cloudSaveStatus = document.getElementById("cloud-save-status");
-    document.getElementById("save-post").addEventListener("click", async () => {
+    async function savePost(automatic = false) {
+      if (saveInProgress) { if (automatic) { autosavePending = true; autosaveTimer = setTimeout(runAutosave, 1000); } return; }
+      if (!automatic) { clearTimeout(autosaveTimer); autosavePending = false; }
+      saveInProgress = true;
+      const generation = workingGeneration;
+      const snapshot = relevantSnapshot();
+      try {
       const now = new Date();
       const firstField = document.getElementById(materialFields[0].id).value.trim() || "未填";
       const id = currentPostId || globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -2323,7 +2373,15 @@
         cloudSaveStatus.style.color = "#b42318";
         cloudSaveStatus.textContent = `${reason}。這台電腦有存到，不會不見`;
       }
-    });
+      } finally {
+        saveInProgress = false;
+        if (automatic && generation === workingGeneration && savePostStatus.textContent === "已存檔。") {
+          document.getElementById("autosave-status").textContent = `已自動存檔 ${new Intl.DateTimeFormat("zh-TW", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date())}`;
+        }
+        if (generation === workingGeneration && snapshot !== relevantSnapshot()) { autosaveSnapshot = snapshot; scheduleAutosave(); }
+      }
+    }
+    document.getElementById("save-post").addEventListener("click", () => savePost(false));
 
     const postsDialog = document.getElementById("posts-dialog");
     const savedPostsList = document.getElementById("saved-posts-list");
@@ -2457,6 +2515,7 @@
 
     async function openSavedPost(post) {
       workingGeneration += 1;
+      clearTimeout(autosaveTimer); autosavePending = false; autosaveReady = false;
       cur.publishDate = typeof post.publishDate === "string" ? post.publishDate : "";
       document.getElementById("publish-date").value = cur.publishDate;
       currentPostId = post.id;
@@ -2494,6 +2553,7 @@
       updateStorageUsage();
       saveDrafts();
       persistWorkingCopy();
+      autosaveSnapshot = relevantSnapshot(); autosaveReady = true;
       savePostStatus.textContent = imageNotice || `已打開「${post.title}」。`;
       postsDialog.close();
     }
@@ -2626,6 +2686,7 @@
     document.getElementById("close-posts").addEventListener("click", () => postsDialog.close());
     document.getElementById("new-post").addEventListener("click", () => {
       workingGeneration += 1;
+      clearTimeout(autosaveTimer); autosavePending = false; autosaveReady = false;
       cur.publishDate = "";
       document.getElementById("publish-date").value = "";
       currentPostId = null;
@@ -2647,6 +2708,7 @@
       updateStorageUsage();
       saveDrafts();
       persistWorkingCopy();
+      autosaveSnapshot = relevantSnapshot(); autosaveReady = true;
       savePostStatus.textContent = "已開始新的一篇。";
     });
 
