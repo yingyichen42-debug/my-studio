@@ -1782,10 +1782,10 @@
     function readImageReferences(value, legacyImage) {
       const references = [];
       const seen = new Set();
-      const add = (id, dataUrl = "") => {
+      const add = (id, dataUrl = "", url = "") => {
         if (typeof id !== "string" || !id || seen.has(id)) return;
         seen.add(id);
-        references.push({ id, dataUrl: typeof dataUrl === "string" && dataUrl.startsWith("data:image/") ? dataUrl : "" });
+        references.push({ id, dataUrl: typeof dataUrl === "string" && dataUrl.startsWith("data:image/") ? dataUrl : "", url: typeof url === "string" && /^https:\/\//i.test(url) ? url : "" });
       };
       if (Array.isArray(value)) {
         value.forEach((image) => {
@@ -1793,7 +1793,7 @@
           else if (image && typeof image === "object") {
             const id = image.id === "legacy-image" && typeof image.dataUrl === "string"
               ? `legacy-${globalThis.crypto?.randomUUID?.() || Date.now()}-${references.length}` : image.id;
-            add(id, image.dataUrl);
+            add(id, image.dataUrl, image.url);
           }
         });
       }
@@ -1813,7 +1813,16 @@
           await saveImageToWarehouse(reference.id, dataUrl);
           migrated = true;
         } else dataUrl = await readImageFromWarehouse(reference.id);
-        if (typeof dataUrl === "string" && dataUrl.startsWith("data:image/")) images.push({ id: reference.id, dataUrl });
+        if (!dataUrl && reference.url) {
+          try {
+            const response = await fetch(reference.url);
+            if (!response.ok) throw new Error("下載圖片失敗");
+            const blob = await response.blob();
+            dataUrl = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob); });
+            await saveImageToWarehouse(reference.id, dataUrl);
+          } catch { dataUrl = reference.url; }
+        }
+        images.push({ id: reference.id, dataUrl: dataUrl || "", url: reference.url });
       }
       return {
         images,
@@ -1918,7 +1927,7 @@
         drafts: { ...drafts },
         aiConversations,
         previousDrafts,
-        postImages: postImages.map((image) => image.id),
+        postImages: postImages.map((image) => image.url ? { id: image.id, url: image.url } : image.id),
         primaryImageId,
         imageTextSettings,
         downloadSize,
@@ -2276,7 +2285,7 @@
         drafts: { ...drafts },
         aiConversations: readAiConversations(aiConversations),
         previousDrafts: previousDrafts && { ...previousDrafts },
-        postImages: postImages.map((image) => image.id),
+        postImages: postImages.map((image) => image.url ? { id: image.id, url: image.url } : image.id),
         primaryImageId,
         imageTextSettings,
         downloadSize
@@ -2301,12 +2310,14 @@
         return;
       }
       try {
-        const { error } = await sb.from("posts").upsert({ id: String(post.id), user_id: me.id, data: post, publish_date: post.publishDate || null, updated_at: new Date().toISOString() }, { onConflict: "user_id,id" });
+        const userId = me.id;
+        const uploaded = await uploadPostImages(post, userId);
+        const { error } = await sb.from("posts").upsert({ id: String(post.id), user_id: userId, data: post, publish_date: post.publishDate || null, updated_at: new Date().toISOString() }, { onConflict: "user_id,id" });
         if (error) throw error;
         if (cloudOwner === me?.id && cloudPostIds) cloudPostIds.add(String(post.id));
-        cloudSaveStatus.textContent = `☁ 雲端也存了：${post.title}`;
+        cloudSaveStatus.textContent = `☁ 雲端也存了：${post.title}（傳了 ${uploaded} 張圖）`;
       } catch (error) {
-        let reason = error?.message || "雲端連線失敗，請檢查網路";
+        let reason = cloudError(error);
         if (["42P01", "PGRST205"].includes(error?.code)) reason = "雲端還沒有 posts 表，到 SQL Editor 貼建表那段按 Run";
         else if (error?.code === "42501" || /row-level security/i.test(reason)) reason = "雲端不讓你存，SQL 的權限那段沒跑到";
         cloudSaveStatus.style.color = "#b42318";
@@ -2321,9 +2332,44 @@
     let cloudOwner = null;
     const autoFetchedUsers = new Set();
     function cloudError(error) {
+      if (/bucket not found/i.test(error?.message || "")) return "雲端還沒有 images 桶子，到 SQL Editor 貼圖片那段按 Run";
+      if (/row-level security/i.test(error?.message || "")) return "雲端不讓你傳圖，SQL 的圖片權限那段沒跑到";
       if (["42P01", "PGRST205"].includes(error?.code)) return "雲端還沒有 posts 表，到 SQL Editor 貼建表那段按 Run";
       if (error?.code === "42501" || /row-level security/i.test(error?.message || "")) return "雲端不讓你存，SQL 的權限那段沒跑到";
       return error?.message || "雲端連線失敗，請檢查網路";
+    }
+    async function uploadPostImages(post, userId) {
+      const references = readImageReferences(post.postImages, post.igImageDataUrl);
+      let uploaded = 0;
+      for (const image of references) {
+        if (image.url) continue;
+        const source = image.dataUrl || postImages.find((item) => item.id === image.id)?.dataUrl || await readImageFromWarehouse(image.id);
+        if (!source || !source.startsWith("data:")) throw new Error(`找不到圖片 ${image.id}，請重新上傳圖片`);
+        const blob = await (await fetch(source)).blob();
+        const extension = ({ "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" })[blob.type] || "jpg";
+        const path = `${userId}/${image.id}.${extension}`;
+        const { error } = await sb.storage.from("images").upload(path, blob, { upsert: true, contentType: blob.type });
+        if (error) throw error;
+        const result = sb.storage.from("images").getPublicUrl(path);
+        image.url = result.data?.publicUrl;
+        if (!image.url) throw new Error("無法取得圖片網址");
+        uploaded++;
+        const current = postImages.find((item) => item.id === image.id);
+        if (current) current.url = image.url;
+        post.postImages = references.map((item) => item.url ? { id: item.id, url: item.url } : item.id);
+        post.savedAt = Date.now();
+        const partial = savedPosts.map((item) => item.id === post.id ? { ...item, postImages: post.postImages, savedAt: post.savedAt } : item);
+        localStorage.setItem(savedPostsStorageKey, JSON.stringify(partial));
+        savedPosts = partial;
+        if (currentPostId === post.id) persistWorkingCopy();
+      }
+      post.postImages = references.map((image) => image.url ? { id: image.id, url: image.url } : image.id);
+      if (uploaded) post.savedAt = Date.now();
+      const next = savedPosts.map((item) => item.id === post.id ? { ...item, postImages: post.postImages, savedAt: post.savedAt } : item);
+      localStorage.setItem(savedPostsStorageKey, JSON.stringify(next));
+      savedPosts = next;
+      if (currentPostId === post.id) persistWorkingCopy();
+      return uploaded;
     }
     function postTime(post) {
       if (post.savedAt != null && post.savedAt !== "") {
@@ -2371,6 +2417,7 @@
         if (!me || me.id !== userId) { postsStatus.textContent = `第 ${index + 1} 篇上傳失敗：登入狀態已變更`; return; }
         const post = posts[index];
         try {
+          await uploadPostImages(post, userId);
           const { error } = await sb.from("posts").upsert({ id: String(post.id), user_id: userId, data: post, publish_date: post.publishDate || null, updated_at: new Date().toISOString() }, { onConflict: "user_id,id" });
           if (error) throw error;
           if (cloudPostIds) cloudPostIds.add(String(post.id));
@@ -2393,7 +2440,7 @@
         if (item.id !== postId) return item;
         const updated = {
           ...item,
-          postImages: postImages.map((image) => image.id),
+          postImages: postImages.map((image) => image.url ? { id: image.id, url: image.url } : image.id),
           primaryImageId
         };
         delete updated.igImageDataUrl;
